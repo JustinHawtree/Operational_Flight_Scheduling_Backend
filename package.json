@@ -1,0 +1,15 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "description": "Mock Backend",
+  "main": "index.js",
+  "author": "SDTeam",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^4.0.1",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "pg": "^8.2.1"
+  }
+}
