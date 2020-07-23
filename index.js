@@ -107,7 +107,7 @@ async function expectToken(req, res, next) {
     next();
   } catch (error) {
     console.log(error);
-    res.status(400).send('Authentiction failure: token denied');
+    res.status(400).send('Authentication failure: token denied');
   }
 }
 
@@ -137,15 +137,8 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());
 
-app.get('/', (request, result) => {
-  result.send("Hello World");
-});
 
 app.post('/login', async (req, res) => {
-  //console.log("Request", req);
-  console.log("Body", req.body);
-  console.log("Username:", req.body.username);
-  console.log("Password:", req.body.password);
   let dbClient;
   try {
     if(!checkBody(req, ['username', 'password'])) return res.code(400).send('');
@@ -206,16 +199,16 @@ app.post('/signup', async (req, res) => {
 });
 
 
-app.post('/insertRank', expectToken, async (req, res) => {
-  if (!checkBody(req, ['rank', 'priority', 'got_wings'])){
+app.post('/rank', expectToken, async (req, res) => {
+  if (!checkBody(req, ['rank', 'priority', 'can_fly'])){
     console.log("Bad Body");
     return res.sendStatus(400);
   }
-  console.log(req.body.rank, req.body.priority, req.body.got_wings);
+  console.log(req.body.rank, req.body.priority, req.body.can_fly);
   let client, sqlResult;
   try {
-    const SQL = "INSERT INTO ranks(rank, priority, got_wings) VALUES($1, $2, $3) RETURNING id";
-    const values = [req.body.rank, req.body.priority, req.body.got_wings];
+    const SQL = "INSERT INTO rank(rank, priority, can_fly) VALUES($1, $2, $3) RETURNING id";
+    const values = [req.body.rank, req.body.priority, req.body.can_fly];
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
     client.release();
@@ -228,10 +221,36 @@ app.post('/insertRank', expectToken, async (req, res) => {
 });
 
 
-app.get('/ranks', expectToken, async (req, res) => {
+app.post('/pilot', expectToken, async (req, res) => {
+  if(!checkBody(req, ['pilot_id', 'first_name', 'last_name', 'rank']))
+  {
+     console.log("Bad body");
+     return res.sendStatus(400);
+  }
+  console.log(req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank);
+  let client, sqlResult;
+  try
+  {
+    const SQL = "INSERT INTO pilot (pilot_id, first_name, last_name, rank) VALUES ($1, $2, $3, $4)";
+    const values = [req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank];
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error)
+    {
+      if(client) client.release();
+      console.log("Insert pilot error", error);
+      return res.sendStatus(500);
+    }
+    return res.status(201).send({"id":sqlResult.rows[0].id});
+});
+    
+
+
+app.get('/rank', expectToken, async (req, res) => {
   let client, sqlResult;
   try {
-    const SQL = "SELECT * FROM ranks";
+    const SQL = "SELECT * FROM rank";
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     client.release();
@@ -240,8 +259,6 @@ app.get('/ranks', expectToken, async (req, res) => {
     console.log("Get Ranks Error:\n", error);
     return res.sendStatus(500);
   }
-  //console.log("User that wants ranks",req.token);
   let rankData = sqlResult.rows;
-  //console.log("SQL RESULT:",sqlResult);
   return res.status(200).send({rankData});
 });
