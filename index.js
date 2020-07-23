@@ -118,6 +118,18 @@ function checkBody(req, params) {
 }
 
 
+function generatePatchSQL(body, validKeys) {
+  let patchSubStrings = Object.keys(body).map((element, index) => {
+    if(validKeys[element]){
+      return `${element} = $${index+1},`;
+    } else {
+      return "";
+    }
+  });
+  patchSubStrings.unshift("SET ");
+  patchSubStrings.join("");
+}
+
 
 
 app.listen(PORT, (err) => {
@@ -175,22 +187,21 @@ app.post('/login', async (req, res) => {
 app.post('/signup', async (req, res) => {
   let client; 
   try {
-    if (!req.body.username || !req.body.password || !req.body.email) {
+    if (!checkBody(req, ['username', 'password', 'email', 'first_name', 'last_name'])){
+      console.log("Bad Body");
       return res.sendStatus(400);
     }
     let hashPassword = await getHash(req.body.password);
-    const SQL = "INSERT INTO account(email, username, password) VALUES($1, $2, $3) RETURNING *";
-    const values = [req.body.email, req.body.username, hashPassword];
+    const SQL = "INSERT INTO account(email, username, password, first_name, last_name) VALUES($1, $2, $3, $4, $5)";
+    const values = [req.body.email, req.body.username, hashPassword, req.body.first_name, req.body.last_name];
     client = await pool.connect();
     let sqlResult = await client.query(SQL, values);
-    console.log("SQLResult:", sqlResult);
     client.release();
   } catch(error) {
     if(client) client.release();
     console.log("Signup Error:\n", error);
     return res.sendStatus(500);
   }
-
   return res.sendStatus(201);
 });
 
