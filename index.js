@@ -16,10 +16,8 @@ const jwtHttpOptions = {
 }
 
 
-
-
 require('dotenv').config();
-const { Pool, Client } = require('pg');
+const { Pool } = require('pg');
 const pg = require('pg');
 
 const pool = new Pool({
@@ -53,7 +51,7 @@ function getHash(password) {
           console.log("Bcrypt Error:", err);
           reject(err);
         }
-	resolve(hash);
+	      resolve(hash);
       });
     });
   });
@@ -175,8 +173,6 @@ app.post('/login', async (req, res) => {
 
 
 app.post('/signup', async (req, res) => {
-  console.log("Username:", req.body.username);
-  console.log("Password:", req.body.password);
   let client; 
   try {
     if (!req.body.username || !req.body.password || !req.body.email) {
@@ -207,7 +203,7 @@ app.post('/rank', expectToken, async (req, res) => {
   console.log(req.body.rank, req.body.priority, req.body.can_fly);
   let client, sqlResult;
   try {
-    const SQL = "INSERT INTO rank(rank, priority, can_fly) VALUES($1, $2, $3) RETURNING id";
+    const SQL = "INSERT INTO rank(rank, priority, can_fly) VALUES($1, $2, $3)";
     const values = [req.body.rank, req.body.priority, req.body.can_fly];
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
@@ -219,33 +215,6 @@ app.post('/rank', expectToken, async (req, res) => {
   }
   return res.status(201).send({"id":sqlResult.rows[0].id});
 });
-
-
-app.post('/pilot', expectToken, async (req, res) => {
-  if(!checkBody(req, ['pilot_id', 'first_name', 'last_name', 'rank']))
-  {
-     console.log("Bad body");
-     return res.sendStatus(400);
-  }
-  console.log(req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank);
-  let client, sqlResult;
-  try
-  {
-    const SQL = "INSERT INTO pilot (pilot_id, first_name, last_name, rank) VALUES ($1, $2, $3, $4)";
-    const values = [req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank];
-    client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
-    client.release();
-  } catch (error)
-    {
-      if(client) client.release();
-      console.log("Insert pilot error", error);
-      return res.sendStatus(500);
-    }
-    return res.status(201).send({"id":sqlResult.rows[0].id});
-});
-    
-
 
 app.get('/rank', expectToken, async (req, res) => {
   let client, sqlResult;
@@ -262,3 +231,48 @@ app.get('/rank', expectToken, async (req, res) => {
   let rankData = sqlResult.rows;
   return res.status(200).send({rankData});
 });
+
+
+app.get('/pilot', expectToken, async (req, res) => {
+  let client, sqlResult;
+  try
+  {
+    const SQL = "INSERT INTO pilot (pilot_id, first_name, last_name, rank) VALUES ($1, $2, $3, $4)";
+    const values = [req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank];
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error)
+    {
+      if(client) client.release();
+      console.log("Insert pilot error", error);
+      return res.sendStatus(500);
+    }
+    return res.status(201).send({"id":sqlResult.rows[0].id});
+});
+
+app.post('/aircraft_model', expectToken, async (req, res) => {
+  if (!checkBody(req, ['name', 'people_required'])){
+    console.log("Bad Body");
+    return res.sendStatus(400);
+  }
+  const SQL = "INSERT INTO aircraft_model (name, people_required) VALUES ($1, $2)";
+  const values = [req.body.name, req.body.people_required];
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if(client) client.release();
+    console.log("Insert aircraft_model error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(201).send({"id":sqlResult.rows[0].id});
+});
+
+
+app.get('/aircraft_model/:id', expectToken, async (req, res) => {
+  console.log(req.params.id);
+  return res.sendStatus(200);
+})
+    
