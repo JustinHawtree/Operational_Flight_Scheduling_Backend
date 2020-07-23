@@ -251,6 +251,7 @@ app.get('/pilot', expectToken, async (req, res) => {
     return res.status(201).send({"id":sqlResult.rows[0].id});
 });
 
+
 app.post('/aircraft_model', expectToken, async (req, res) => {
   if (!checkBody(req, ['name', 'people_required'])){
     console.log("Bad Body");
