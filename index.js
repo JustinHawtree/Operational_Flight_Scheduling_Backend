@@ -237,10 +237,9 @@ app.get('/pilot', expectToken, async (req, res) => {
   let client, sqlResult;
   try
   {
-    const SQL = "INSERT INTO pilot (pilot_id, first_name, last_name, rank) VALUES ($1, $2, $3, $4)";
-    const values = [req.body.pilot_id, req.body.first_name, req.body.last_name, req.body.rank];
+    const SQL = "SELECT * FROM account";
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(SQL);
     client.release();
   } catch (error)
     {
@@ -248,7 +247,7 @@ app.get('/pilot', expectToken, async (req, res) => {
       console.log("Insert pilot error", error);
       return res.sendStatus(500);
     }
-    return res.status(201).send({"id":sqlResult.rows[0].id});
+    return res.status(200).send({pilots: sqlResult.rows});
 });
 
 
@@ -273,7 +272,16 @@ app.post('/aircraft_model', expectToken, async (req, res) => {
 
 
 app.get('/aircraft_model/:id', expectToken, async (req, res) => {
-  console.log(req.params.id);
-  return res.sendStatus(200);
-})
-    
+  const SQL = "SELECT * FROM aircraft_model WHERE model_id = $1";
+  const values = [req.params.id];
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get aircraft_model error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({model: sqlResult.rows[0]});
+});
