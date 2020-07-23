@@ -16,31 +16,54 @@ pool.on('error', (err, client) => {
 
 const preparedSQL = [
     `CREATE TABLE account(
-	    user_id serial PRIMARY KEY,
+	    user_id SERIAL,
 	    username VARCHAR(50) UNIQUE NOT NULL,
 	    password VARCHAR (100) NOT NULL,
 	    email VARCHAR (50) UNIQUE NOT NULL,
 	    created_on TIMESTAMP,
-	    last_login TIMESTAMP
+	    last_login TIMESTAMP,
+	    PRIMARY KEY (user_id)
+    );`,
+
+    `CREATE TABLE pilot(
+	    pilot_id SERIAL,
+	    first_name VARCHAR(30),
+	    last_name VARCHAR(30),
+	    rank SERIAL,
+	    FOREIGN KEY (rank) REFERENCES ranks (id),
+	    FOREIGN KEY (pilot_id) REFERENCES account (user_id)
     );`,
 	
-    `CREATE TABLE ranks(
-	    id serial PRIMARY KEY,
+    `CREATE TABLE rank(
+	    id SERIAL,
 	    rank VARCHAR(50) UNIQUE NOT NULL,
 	    priority SMALLINT UNIQUE NOT NULL,
-	    got_wings BOOLEAN NOT NULL
+	    can_fly BOOLEAN NOT NULL,
+	    PRIMARY KEY(id)
     );`,
     
-    `CREATE TABLE aircraft(
-	    id serial PRIMARY KEY,
+    `CREATE TABLE aircraft_type(
+	    id SERIAL,
 	    name VARCHAR(50) UNIQUE NOT NULL,
 	    airspace VARCHAR(50) NOT NULL,
 	    people_required INTEGER NOT NULL,
+	    PRIMARY KEY (id)
      );`,
 
+     `CREATE TABLE aircraft_record(
+	    aircraft_id INTEGER,
+	    type_id SERIAL,
+	    maintenance_status VARCHAR(50),
+	    PRIMARY KEY(aircraft_id),
+	    FOREIGN KEY (type_id) REFERENCES aircraft_type (id)
+    );`,
+
     `CREATE TABLE airspace(
-	    id serial PRIMARY KEY,
+	    id SERIAL,
 	    name VARCHAR(50) UNIQUE NOT NULL,
+	    lower_altitude INTEGER NOT NULL,
+	    upper_altitude INTEGER NOT NULL,
+	    PRIMARY KEY (id)
      );`,
 ];
 
