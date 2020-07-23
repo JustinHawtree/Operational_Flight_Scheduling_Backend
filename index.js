@@ -245,7 +245,9 @@ app.post('/pilot', expectToken, async (req, res) => {
     return res.status(201).send({"id":sqlResult.rows[0].id});
 });
     
-
+app.post('/aircraft', expectToken, async (req,res) => {
+  //if(!checkBody(req, []){}
+});
 
 app.get('/rank', expectToken, async (req, res) => {
   let client, sqlResult;
