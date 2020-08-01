@@ -33,7 +33,7 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
-
+//Security keys for jwt 
 const privateKey = fs.readFileSync('./private.key', 'utf8');
 const publicKey = fs.readFileSync('./public.key', 'utf8');
 
