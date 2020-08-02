@@ -25,11 +25,11 @@ const preparedSQL = [
 	
   `CREATE TABLE account (
       account_id INT GENERATED ALWAYS AS IDENTITY,
-      username VARCHAR(50) UNIQUE NOT NULL,
       email VARCHAR (50) UNIQUE NOT NULL,
       password VARCHAR (100) NOT NULL,
       first_name VARCHAR(50),
       last_name VARCHAR(50),
+      military_id VARCHAR(50),
       rank_id INT,
       created_on TIMESTAMP,
       last_login TIMESTAMP,
@@ -42,8 +42,7 @@ const preparedSQL = [
       name VARCHAR(50) UNIQUE NOT NULL,
       people_required INTEGER NOT NULL,
       PRIMARY KEY (model_id)
-	);`,
-	 //	airspace VARCHAR(50) NOT NULL,
+  );`,
 
   `CREATE TABLE aircraft (
       aircraft_id INT GENERATED ALWAYS AS IDENTITY,
