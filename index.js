@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const cors = require('cors');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const jwt = require('jsonwebtoken');
@@ -14,6 +15,10 @@ const jwtHttpOptions = {
   expiresIn: "2h",
   algorithm: "RS512"
 }
+
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
 
 
 require('dotenv').config();
@@ -151,13 +156,13 @@ app.use(bodyParser.json());
 app.post('/login', async (req, res) => {
   let dbClient;
   try {
-    if(!checkBody(req, ['username', 'password'])) return res.code(400).send('');
+    if(!checkBody(req, ['email', 'password'])) return res.status(400).send('');
     dbClient = await pool.connect();
     
-    const sql = `SELECT password FROM account WHERE username = $1`;
+    const sql = `SELECT password FROM account WHERE email = $1`;
 
-    const result = await dbClient.query(sql, [req.body.username]);
-    //Check to see if the username is in the table
+    const result = await dbClient.query(sql, [req.body.email]);
+    //Check to see if the email is in the table
     if(result.rows.length === 0) {
       dbClient.release();
       return res.status(400).send('');
@@ -166,11 +171,11 @@ app.post('/login', async (req, res) => {
     //console.log("Look Here1:", result.rows[0]);
     console.log("PasswordCheck: ", passwordCheck);
     if (passwordCheck === false) {
-      console.log("Bad Password attempt for:", req.body.username);
+      console.log("Bad Password attempt for:", req.body.email);
       dbClient.release();
       return res.sendStatus(400);
     }
-    let token = await setToken({ username: req.body.username });
+    let token = await setToken({ email: req.body.email });
     dbClient.release();
     return res.status(200).send({
       token: token
@@ -187,13 +192,13 @@ app.post('/login', async (req, res) => {
 app.post('/signup', async (req, res) => {
   let client; 
   try {
-    if (!checkBody(req, ['username', 'password', 'email', 'first_name', 'last_name'])){
+    if (!checkBody(req, ['email', 'password', 'first_name', 'last_name', 'military_id', 'rank_id'])){
       console.log("Bad Body");
       return res.sendStatus(400);
     }
     let hashPassword = await getHash(req.body.password);
-    const SQL = "INSERT INTO account(email, username, password, first_name, last_name) VALUES($1, $2, $3, $4, $5)";
-    const values = [req.body.email, req.body.username, hashPassword, req.body.first_name, req.body.last_name];
+    const SQL = "INSERT INTO account(email, password, first_name, last_name, military_id) VALUES($1, $2, $3, $4, $5)";
+    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, req.body.military_id];
     client = await pool.connect();
     let sqlResult = await client.query(SQL, values);
     client.release();

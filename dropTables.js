@@ -10,6 +10,7 @@ const pool = new Pool({
 });
 
 let preparedSQL = [
+   `DROP TABLE IF EXISTS "pilot";`,
    `DROP TABLE IF EXISTS "account";`,
    `DROP TABLE IF EXISTS "rank";`,
    `DROP TABLE IF EXISTS "aircraft";`,
