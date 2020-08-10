@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const validator = require('validator');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -105,34 +106,79 @@ function decryptToken(token) {
 
 async function expectToken(req, res, next) {
   try {
-    console.log("User used Token:", req.headers.authorization);
     req.token = await decryptToken(req.headers.authorization);
     next();
   } catch (error) {
     console.log(error);
-    res.status(400).send('Authentication failure: token denied');
+    return res.status(400).send({error: 'Authentication Failure: Token Denied'});
   }
 }
 
 
-function checkBody(req, params) {
+function expectAdmin(req, res, next) {
+  if (!req.token) {
+    console.log("There is no token, please put expectToken function first to fix", req.method, req.url);
+    return res.sendStatus(400);
+  }
+
+  if (req.token.role !== "Admin") {
+    console.log("An Admin role is required for:", req.method, req.url);
+    return res.sendStatus(400);
+  }
+  next();
+}
+
+
+function expectAdmin_Scheduler(req, res, next) {
+  if (!req.token) {
+    console.log("There is no token, please put expectToken function first to fix", req.method, req.url);
+    return res.sendStatus(400);
+  }
+
+  if (req.token.role !== "Admin" && req.token.role !== "Scheduler") {
+    console.log("An Admin role or a Scheduler role is required for", req.method, req.url);
+    return res.sendStatus(400);
+  }
+  next();
+}
+
+
+
+
+function checkBody(body, params) {
+  if (!body) return false;
+  
   for (const param of params) {
-    if(!req.body[param]) return false;
+    if(!body[param]) return false;
   }
   return true;
 }
 
 
-function generatePatchSQL(body, validKeys) {
-  let patchSubStrings = Object.keys(body).map((element, index) => {
-    if(validKeys[element]){
-      return `${element} = $${index+1},`;
-    } else {
-      return "";
+function formatSetPatchSQL(validArray, body) {
+  let validObj = {};
+  let values = [];
+  let setArray = ["SET "];
+
+  for (let i = 0; i < validArray.length; i++) {
+    validObj[validArray[i]] = 1;
+  }
+
+  let valuePos = 1;
+  Object.keys(body).forEach((bodyProp) => {
+    if (validObj[bodyProp]) {
+      // add column_name = $#,
+      setArray.push(`${bodyProp} = ${"$"+valuePos},`);
+      // update valid position
+      valuePos += 1;
+      // appends the value from the user to the values array
+      values.push(body[bodyProp]);
     }
-  });
-  patchSubStrings.unshift("SET ");
-  patchSubStrings.join("");
+  })
+
+  let stringSet = setArray.join("").slice(0, -1);
+
+  return [stringSet, values]
 }
 
 
@@ -153,38 +199,51 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 
+
+
+
+
+
 app.post('/login', async (req, res) => {
   let dbClient;
   try {
-    if(!checkBody(req, ['email', 'password'])) return res.status(400).send('');
-    dbClient = await pool.connect();
-    
-    const sql = `SELECT password FROM account WHERE email = $1`;
-
-    const result = await dbClient.query(sql, [req.body.email]);
-    //Check to see if the email is in the table
-    if(result.rows.length === 0) {
-      dbClient.release();
-      return res.status(400).send('');
-    }
-    let passwordCheck = await compareHash(req.body.password, result.rows[0].password);
-    //console.log("Look Here1:", result.rows[0]);
-    console.log("PasswordCheck: ", passwordCheck);
-    if (passwordCheck === false) {
-      console.log("Bad Password attempt for:", req.body.email);
-      dbClient.release();
+    if (!checkBody(req.body, ['email', 'password'])) {
       return res.sendStatus(400);
     }
-    let token = await setToken({ email: req.body.email });
+    
+    dbClient = await pool.connect();
+    
+    const sql = `SELECT password, accepted, role FROM account WHERE email = $1`;
+
+    const result = await dbClient.query(sql, [req.body.email]);
     dbClient.release();
-    return res.status(200).send({
-      token: token
-    });
+
+    //Check to see if the email is in the table
+    if (result.rows.length === 0) {
+      return res.sendStatus(400);
+    }
+
+    let passwordCheck = await compareHash(req.body.password, result.rows[0].password);
+
+    if (passwordCheck === false) {
+      console.log("Bad Password attempt for:", req.body.email);
+      return res.sendStatus(400);
+    }
+
+    // Check to see if the admin approved this user
+    if (!result.rows[0].accepted) {
+      console.log("User:", req.body.email, "tried to log in but is not accepted!");
+      return res.sendStatus(400);
+    }
+
+    let token = await setToken({ email: req.body.email, role: result.rows[0].role });
+    console.log("User:", req.body.email, "has logged in!");
+    return res.status(200).send({ token: token });
   
   } catch (err) {
     console.log("Login Error:\n", err);
     if (dbClient) dbClient.release();
-    return res.status(400).send('');
+    return res.sendStatus(400);
   }
 });
 
@@ -192,35 +251,105 @@ app.post('/login', async (req, res) => {
 app.post('/signup', async (req, res) => {
   let client; 
   try {
-    if (!checkBody(req, ['email', 'password', 'first_name', 'last_name', 'military_id', 'rank_id'])){
+    if (!checkBody(req.body, ['email', 'password', 'first_name', 'last_name', 'military_id'])){
       console.log("Bad Body");
       return res.sendStatus(400);
     }
     let hashPassword = await getHash(req.body.password);
-    const SQL = "INSERT INTO account(email, password, first_name, last_name, military_id) VALUES($1, $2, $3, $4, $5)";
-    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, req.body.military_id];
+    const SQL = "INSERT INTO account(email, password, first_name, last_name, military_id, accepted) VALUES($1, $2, $3, $4, $5, $6)";
+    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, req.body.military_id, false];
+    
     client = await pool.connect();
     let sqlResult = await client.query(SQL, values);
+    
     client.release();
+ 
   } catch(error) {
     if(client) client.release();
     console.log("Signup Error:\n", error);
+    // Unique key constraint error (means we are using a value already in use)
+    if (error.code === '23505') {
+      if (error.constraint === 'account_email_key') {
+        return res.status(400).send({error: "Email is already in use."});
+      } else if (error.constraint === 'account_military_id_key') {
+        return res.status(400).send({error: "Military id is already in use."});
+      }
+    }
     return res.sendStatus(500);
   }
   return res.sendStatus(201);
 });
 
 
-app.post('/rank', expectToken, async (req, res) => {
-  if (!checkBody(req, ['rank', 'priority', 'can_fly'])){
+app.patch('/account', expectToken, expectAdmin, async (req, res) => {
+  if (!checkBody(req.body, ['id'])) {
+    console.log("Patch /account need id in body");
+    return res.sendStatus(400);
+  }
+
+  let SQL = "UPDATE account ";
+  let [stringSet, values] = formatSetPatchSQL(["first_name","last_name","accepted", "rank_id", "pilot_status", "role"], req.body);
+  if (values.length <= 0) {
+    console.log("Body didnt have any valid column names for", req.method, req.url);
+    return res.sendStatus(400);
+  }
+  
+  //TODO: If we are editing the role make sure we are not changing an Admin user (demoting a admin user is a bad thing)
+
+  SQL += (stringSet + ` WHERE account_id = $${values.length+1}`);
+  console.log("SQL:", SQL);
+  values.push(req.body.id);
+
+  let client;
+  try {
+    client = await pool.connect();
+    let sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Patch account error", error);
+    return res.sendStatus(500);
+  }
+  return res.sendStatus(200);
+});
+
+
+app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
+
+  let client, sqlResult;
+  try {
+    const SQL = "SELECT first_name, last_name, account_uuid, pilot_status FROM account WHERE pilot_status <> 'N/A'";
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+
+  } catch (error) {
+    if(client) client.release();
+    console.log("Insert pilot error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({pilots: sqlResult.rows});
+});
+
+
+
+
+
+
+
+
+
+
+app.post('/rank', expectToken, expectAdmin, async (req, res) => {
+  if (!checkBody(req.body, ['rank_name', 'priority', 'pay_grade', 'abbreviation'])){
     console.log("Bad Body");
     return res.sendStatus(400);
   }
-  console.log(req.body.rank, req.body.priority, req.body.can_fly);
+
   let client, sqlResult;
   try {
-    const SQL = "INSERT INTO rank(rank, priority, can_fly) VALUES($1, $2, $3)";
-    const values = [req.body.rank, req.body.priority, req.body.can_fly];
+    const SQL = "INSERT INTO rank(rank_name, priority, pay_grade, abbreviation) VALUES($1, $2, $3, $4)";
+    const values = [req.body.rank_name, req.body.priority, req.body.pay_grade, req.body.abbreviation];
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
     client.release();
@@ -229,10 +358,11 @@ app.post('/rank', expectToken, async (req, res) => {
     console.log("Insert Rank Error:\n", error);
     return res.sendStatus(500);
   }
-  return res.status(201).send({"id":sqlResult.rows[0].id});
+  return res.status(201).send({id: sqlResult.rows[0].id});
 });
 
-app.get('/rank', expectToken, async (req, res) => {
+
+app.get('/rank', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
     const SQL = "SELECT * FROM rank";
@@ -245,30 +375,109 @@ app.get('/rank', expectToken, async (req, res) => {
     return res.sendStatus(500);
   }
   let rankData = sqlResult.rows;
-  return res.status(200).send({rankData});
+  return res.status(200).send({ranks: rankData});
 });
 
 
-app.get('/pilot', expectToken, async (req, res) => {
+app.put('/rank/:id', expectToken, expectAdmin, async (req, res) => {
+  // Make sure the parameter is an integer
+  if (!validator.isInt(req.params.id+"")) {
+    return res.sendStatus(400);
+  }
+  // Make sure the body has all the information we need to fully update this resource
+  if (!checkBody(req.body, ['rank_name', 'priority', 'pay_grade', 'abbreviation'])){
+    console.log("Bad Body");
+    return res.sendStatus(400);
+  }
+
+  let SQL = "UPDATE rank ";
+  let [stringSet, values] = formatSetPatchSQL(['rank_name', 'priority', 'pay_grade', 'abbreviation'], req.body);
+  
+  SQL += (stringSet + ` WHERE rank_id = $${values.length+1}`);
+  values.push(req.params.id);
+
+
   let client, sqlResult;
-  try
-  {
-    const SQL = "SELECT * FROM account";
+  try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL);
+    sqlResult = await client.query(SQL, values);
     client.release();
-  } catch (error)
-    {
-      if(client) client.release();
-      console.log("Insert pilot error", error);
-      return res.sendStatus(500);
-    }
-    return res.status(200).send({pilots: sqlResult.rows});
+  } catch (error) {
+    if (client) client.release();
+    console.log("Put Rank Error:\n", error);
+    return res.sendStatus(500);
+  }
+
+  res.sendStatus(200);
 });
+
+
+app.patch('/rank/:id', expectToken, expectAdmin, async (req, res) => {
+  // Make sure the parameter is an integer
+  if (!validator.isInt(req.params.id+"")) {
+    return res.sendStatus(400);
+  }
+
+  let SQL = "UPDATE rank ";
+  let [stringSet, values] = formatSetPatchSQL(['rank_name', 'priority', 'pay_grade', 'abbreviation'], req.body);
+  if (values.length <= 0) {
+    console.log("Body didnt have any valid column names for:", req.method, req.url);
+    return res.sendStatus(400);
+  }
+  
+  SQL += (stringSet + ` WHERE rank_id = $${values.length+1}`);
+  values.push(req.params.id);
+
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Patch Rank Error:\n", error);
+    return res.sendStatus(500);
+  }
+
+  res.sendStatus(200);
+});
+
+
+app.delete('/rank/:id', expectToken, expectAdmin, async (req, res) => {
+  // Make sure the parameter is an integer
+  if (!validator.isInt(req.params.id+"")) {
+    return res.sendStatus(400);
+  }
+  
+  const SQL = "DELETE FROM rank WHERE rank_id = $1";
+
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [req.params.id]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Delete Rank Error:\n", error);
+    return res.sendStatus(500);
+  }
+
+  res.sendStatus(200);
+});
+
+
+
+
+
+
+
+
+
+
 
 
 app.post('/aircraft_model', expectToken, async (req, res) => {
-  if (!checkBody(req, ['name', 'people_required'])){
+  if (!checkBody(req.body, ['name', 'people_required'])){
     console.log("Bad Body");
     return res.sendStatus(400);
   }
