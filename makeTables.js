@@ -101,7 +101,8 @@ const preparedSQL = [
 
   `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
     VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
-           ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP');`,
+           ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
+           ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP');`,
     
 
   `CREATE TABLE aircraft_model (
