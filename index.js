@@ -238,7 +238,7 @@ app.post('/login', async (req, res) => {
 
     let token = await setToken({ email: req.body.email, role: result.rows[0].role });
     console.log("User:", req.body.email, "has logged in!");
-    return res.status(200).send({ token: token });
+    return res.status(200).send({ token: token, role: result.rows[0].role });
   
   } catch (err) {
     console.log("Login Error:\n", err);
@@ -315,21 +315,86 @@ app.patch('/account', expectToken, expectAdmin, async (req, res) => {
 
 
 app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
-
   let client, sqlResult;
   try {
     const SQL = "SELECT first_name, last_name, account_uuid, pilot_status FROM account WHERE pilot_status <> 'N/A'";
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     client.release();
-
   } catch (error) {
-    if(client) client.release();
+    if (client) client.release();
     console.log("Insert pilot error", error);
     return res.sendStatus(500);
   }
   return res.status(200).send({pilots: sqlResult.rows});
 });
+
+
+app.get('/approval', expectToken, expectAdmin, async (req, res) => {
+  let client, sqlResult;
+  try {
+    const SQL = "SELECT account_uuid, military_id,  email, first_name, last_name FROM account WHERE accepted = false";
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get waiting for approval error:", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({pilots: sqlResult.rows});
+});
+
+
+
+app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
+  if (!checkBody(req.body, ['approve'])) {
+    console.log("Patch /approve need approve in body");
+    return res.sendStatus(400);
+  }
+  if (!req.body.approve.length) {
+    console.log("Patch /approve body approve needs to be an non-empty array");
+    return res.sendStatus(400);
+  }
+
+  let client, sqlResult;
+  try {
+    let SQL = "UPDATE account SET accepted = true WHERE account_uuid IN (";
+    let stringArray = []
+    let valueArray = []
+    let valuePos = 1;
+
+    for(let i = 0; i < req.body.approve.length; i++) {
+      if (validator.isUUID(req.body.approve[i], 4)) {
+        stringArray.push(`$${valuePos}, `);
+        valuePos += 1;
+        valueArray.push(req.body.approve[i]);
+      }
+    }
+
+    if (stringArray.length === 0) {
+      console.log("Patch /approve no valid account uuid's");
+      return res.sendStatus(400);
+    }
+
+    SQL += stringArray.join("").slice(0, -2);
+    SQL += ")";
+
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, valueArray);
+    client.release();
+    
+  } catch (error) {
+    if (client) client.release();
+    console.log("Patch approving accounts error:", error);
+    return res.sendStatus(500);
+  }
+  res.sendStatus(200);
+});
+
+
+
+
 
 
 
