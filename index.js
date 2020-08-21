@@ -233,7 +233,7 @@ app.post('/login', async (req, res) => {
     // Check to see if the admin approved this user
     if (!result.rows[0].accepted) {
       console.log("User:", req.body.email, "tried to log in but is not accepted!");
-      return res.sendStatus(400);
+      return res.status(400).send(error: {status: 400, message: "User has not been accepted yet."});
     }
 
     let token = await setToken({ email: req.body.email, role: result.rows[0].role });
