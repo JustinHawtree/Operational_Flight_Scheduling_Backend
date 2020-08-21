@@ -88,7 +88,7 @@ const preparedSQL = [
       last_name VARCHAR(50) NOT NULL,
       military_id VARCHAR(50) UNIQUE NOT NULL,
       accepted BOOLEAN NOT NULL DEFAULT FALSE,
-      rank_id INT,
+      rank_id INT NOT NULL DEFAULT 1,
       pilot_status VARCHAR(5) DEFAULT 'N/A',
       role VARCHAR(20) NOT NULL DEFAULT 'User',
       created_on TIMESTAMP,

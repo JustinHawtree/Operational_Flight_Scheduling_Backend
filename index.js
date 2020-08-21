@@ -79,11 +79,14 @@ function compareHash(plainPassword, hashPassword) {
 
 function setToken(obj) {
   return new Promise((resolve, reject) => {
+    // Small different way to get UTC timestamp
+    let expires_in = 7200;
+    let tokenDate = new Date().toISOString().replace("Z", "");
     jwt.sign(obj, privateKey, jwtHttpOptions, (error, token) => {
       if (error) {
         reject(error);
       } else {
-        resolve(token);
+        resolve([token, tokenDate, expires_in]);
       }
     });
   });
@@ -213,7 +216,7 @@ app.post('/login', async (req, res) => {
     
     dbClient = await pool.connect();
     
-    const sql = `SELECT password, accepted, role FROM account WHERE email = $1`;
+    const sql = `SELECT password, accepted, role, account_uuid, FROM account WHERE email = $1`;
 
     const result = await dbClient.query(sql, [req.body.email]);
     dbClient.release();
@@ -236,9 +239,18 @@ app.post('/login', async (req, res) => {
       return res.status(400).send({error: {status: 400, message: "User has not been accepted yet."}});
     }
 
-    let token = await setToken({ email: req.body.email, role: result.rows[0].role });
+    let [token, tokenDate, expires_in] = await setToken({ email: req.body.email, role: result.rows[0].role });
     console.log("User:", req.body.email, "has logged in!");
-    return res.status(200).send({ token: token, role: result.rows[0].role });
+    return res.status(200).send(
+      { 
+        account_uuid: result.rows[0].account_uuid,
+        access_token: token,
+        access_token_created: tokenDate,
+        access_token_expires_in: expires_in,
+        role: result.rows[0].role,
+        email: req.body.email
+      }
+    );
   
   } catch (err) {
     console.log("Login Error:\n", err);
