@@ -10,6 +10,7 @@ const pool = new Pool({
 });
 
 let preparedSQL = [
+  `DROP TABLE IF EXISTS "model_position"`,
   `DROP TABLE IF EXISTS "flight_pilot"`,
   `DROP TABLE IF EXISTS "account";`,
   `DROP TABLE IF EXISTS "role";`,
@@ -22,8 +23,6 @@ let preparedSQL = [
   `DROP TABLE IF EXISTS "aircraft_model";`,
   `DROP TABLE IF EXISTS "airspace";`,
   `DROP TABLE IF EXISTS "location"`,
-  `DROP TYPE IF EXISTS "pilot_status"`,
-  `DROP TYPE IF EXISTS "crew_position"`,
   `DROP EXTENSION IF EXISTS "uuid-ossp";`
 ];
 

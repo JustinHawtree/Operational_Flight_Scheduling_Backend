@@ -27,15 +27,6 @@ const preparedSQL = [
       VALUES ('N/A'), ('UP'), ('FP'), ('MP'), ('IP'), ('EP');`,
 
 
-  /* The position of a person on any given aircraft */
-  `CREATE TABLE crew_position (
-      position VARCHAR(20),
-      PRIMARY KEY(position)
-  );`,
-  `INSERT INTO crew_position (position)
-      VALUES ('Pilot'), ('Copilot'), ('Loader'), ('Gunner');`,
-
-
   `CREATE TABLE role (
       role_name VARCHAR(20),
       PRIMARY KEY(role_name)
@@ -81,7 +72,7 @@ const preparedSQL = [
   /* General account, holds login info and using the flight experience enum */
   `CREATE TABLE account (
       account_id INT GENERATED ALWAYS AS IDENTITY,
-      account_uuid uuid DEFAULT uuid_generate_v4(),
+      account_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       email VARCHAR(50) UNIQUE NOT NULL,
       password VARCHAR(100) NOT NULL,
       first_name VARCHAR(50) NOT NULL,
@@ -100,29 +91,84 @@ const preparedSQL = [
   );`,
 
   `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
-    VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
-           ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
-           ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP');`,
+      VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
+             ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
+             ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP');`,
     
+
+
+
+
 
   `CREATE TABLE aircraft_model (
       model_id INT GENERATED ALWAYS AS IDENTITY,
       name VARCHAR(50) UNIQUE NOT NULL,
-      pilot BOOLEAN NOT NULL,
-      copilot BOOLEAN NOT NULL,
-      loader BOOLEAN NOT NULL,
-      gunner BOOLEAN NOT NULL,
       PRIMARY KEY (model_id)
   );`,
 
+  `INSERT INTO aircraft_model (name)
+      VALUES ('A-10 Thunderbolt ii'),
+             ('HC-130J Combat King ii'),
+             ('HH-60 Pave Hawk')`,
+  
+  /* The position of a person on any given aircraft */
+  `CREATE TABLE crew_position (
+      crew_position_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+      position VARCHAR(30) NOT NULL,
+      required BOOLEAN NOT NULL,
+      PRIMARY KEY(position, required)
+  );`,
+
+  `INSERT INTO crew_position (position, required)
+      VALUES ('Pilot', TRUE),
+             ('Copilot', TRUE),
+             ('Load-Master', TRUE),
+             ('Load-Master', FALSE),
+             ('Combat System Officer', TRUE),
+             ('Flight Engineer', TRUE),
+             ('Gunner', TRUE);`,
+
+  `CREATE TABLE model_position (
+      model_position_id INT GENERATED ALWAYS AS IDENTITY,
+      model_id INT,
+      crew_position_id INT,
+      PRIMARY KEY (model_position_id),
+      FOREIGN KEY (model_id) REFERENCES aircraft_model (model_id),
+      FOREIGN KEY (crew_position_id) REFERENCES crew_position (crew_position_id)
+  )`,
+
+  `INSERT INTO model_position (model_id, crew_position_id)
+      VALUES (1, 1),
+             (2, 1),
+             (2, 2),
+             (2, 5),
+             (2, 3),
+             (2, 4),
+             (3, 1),
+             (3, 2),
+             (3, 6),
+             (3, 7)`,
 
   `CREATE TABLE aircraft (
       aircraft_id INT GENERATED ALWAYS AS IDENTITY,
-      type_id INT,
+      aircraft_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
+      model_id INT,
       status VARCHAR(50),
       PRIMARY KEY(aircraft_id),
-      FOREIGN KEY (type_id) REFERENCES aircraft_model (model_id)
+      FOREIGN KEY (model_id) REFERENCES aircraft_model (model_id)
   );`,
+
+  `INSERT INTO aircraft (model_id, status)
+      VALUES (2, 'Active')`,
+
+
+
+
+
+
+
+
+
 
 
   `CREATE TABLE location (
@@ -135,10 +181,14 @@ const preparedSQL = [
 
   `CREATE TABLE flight (
       flight_id INT GENERATED ALWAYS AS IDENTITY,
+      flight_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       aircraft_id INT,
       location_id INT,
       start_time TIMESTAMP,
       end_time TIMESTAMP,
+      color VARCHAR(30),
+      title VARCHAR(50),
+      description VARCHAR(200),
       PRIMARY KEY (flight_id),
       FOREIGN KEY (aircraft_id) REFERENCES aircraft (aircraft_id),
       FOREIGN KEY (location_id) REFERENCES location (location_id)
@@ -149,11 +199,11 @@ const preparedSQL = [
       flight_pilot_id INT GENERATED ALWAYS AS IDENTITY,
       flight_id INT,
       account_id INT,
-      position VARCHAR(20),
+      crew_position_id INT,
       PRIMARY KEY (flight_pilot_id),
       FOREIGN KEY (flight_id) REFERENCES flight (flight_id),
       FOREIGN KEY (account_id) REFERENCES account (account_id),
-      FOREIGN KEY (position) REFERENCES crew_position (position)
+      FOREIGN KEY (crew_position_id) REFERENCES crew_position (crew_position_id)
   );`
 ];
 

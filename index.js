@@ -25,6 +25,7 @@ app.use(cors({
 require('dotenv').config();
 const { Pool } = require('pg');
 const pg = require('pg');
+const { hasUncaughtExceptionCaptureCallback } = require('process');
 
 const pool = new Pool({
     user: process.env.PGUSER,
@@ -216,7 +217,7 @@ app.post('/login', async (req, res) => {
     
     dbClient = await pool.connect();
     
-    const sql = `SELECT password, accepted, role, account_uuid, FROM account WHERE email = $1`;
+    const sql = `SELECT password, accepted, role, account_uuid FROM account WHERE email = $1`;
 
     const result = await dbClient.query(sql, [req.body.email]);
     dbClient.release();
@@ -553,29 +554,31 @@ app.delete('/rank/:id', expectToken, expectAdmin, async (req, res) => {
 
 
 
-app.post('/aircraft_model', expectToken, async (req, res) => {
-  if (!checkBody(req.body, ['name', 'people_required'])){
+app.post('/aircraft_model', expectToken, expectAdmin, async (req, res) => {
+  if (!checkBody(req.body, ['name', 'pilot', 'copilot', 'loader', 'gunner'])){
     console.log("Bad Body");
     return res.sendStatus(400);
   }
-  const SQL = "INSERT INTO aircraft_model (name, people_required) VALUES ($1, $2)";
-  const values = [req.body.name, req.body.people_required];
+  const SQL = "INSERT INTO aircraft_model (name, pilot, copilot, loader, gunner) VALUES ($1, $2, $3, $4, $5)";
+  const values = [req.body.name, req.body.pilot, req.body.copilot, req.body.loader, req.body.gunner];
+  let client, sqlResult;
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
     client.release();
   } catch (error) {
-    if(client) client.release();
+    if (client) client.release();
     console.log("Insert aircraft_model error", error);
     return res.sendStatus(500);
   }
-  return res.status(201).send({"id":sqlResult.rows[0].id});
+  return res.status(201).send({id: sqlResult.rows[0].id});
 });
 
 
-app.get('/aircraft_model/:id', expectToken, async (req, res) => {
+app.get('/aircraft_model/:id', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = "SELECT * FROM aircraft_model WHERE model_id = $1";
   const values = [req.params.id];
+  let client, sqlResult;
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
@@ -587,3 +590,53 @@ app.get('/aircraft_model/:id', expectToken, async (req, res) => {
   }
   return res.status(200).send({model: sqlResult.rows[0]});
 });
+
+
+
+
+
+
+
+
+
+// TODO airplanes might need a id or serial number between other airplanes? I guess we can use table id for now
+app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
+  if (!checkBody(req.body, ['model_id', 'status'])){
+    console.log("POST airplane bad body");
+    return res.sendStatus(400);
+  }
+  const SQL = "INSERT INTO aircraft (model_id, status) VALUES ($1, $2)";
+  const values = [req.body.model_id, req.body.status];
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Insert airplane error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(201).send({id: sqlResult.rows[0].id});
+});
+
+app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
+  const SQL = `SELECT aircraft_uuid as id, model_id, status FROM aircraft`;
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    let modelIdObj = {};
+    for (const item of sqlResult.rows) {
+      if (!modelIdObj[item.model_id]) {
+        modelIdObj[item.model_id] = true; 
+      }
+    }
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get airplane error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({airplanes: sqlResult.rows});
+})
