@@ -1,17 +1,18 @@
 'use strict';
 require('dotenv').config();
+const moment = require('moment');
 const { Pool } = require('pg');
 const pool = new Pool({
-    user: process.env.PGUSER,
-    host: process.env.PGHOST,
-    database: process.env.PGDATABASE,
-    password: process.env.PGPASSWORD,
-    port: process.env.PGPORT
+  user: process.env.PGUSER,
+  host: process.env.PGHOST,
+  database: process.env.PGDATABASE,
+  password: process.env.PGPASSWORD,
+  port: process.env.PGPORT
 });
 
 pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
 });
 
 const preparedSQL = [
@@ -89,7 +90,7 @@ const preparedSQL = [
       FOREIGN KEY (role) REFERENCES role (role_name),
       PRIMARY KEY (account_id)
   );`,
-
+  //  TODO: make an approved default user
   `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
       VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
              ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
@@ -102,11 +103,11 @@ const preparedSQL = [
 
   `CREATE TABLE aircraft_model (
       model_id INT GENERATED ALWAYS AS IDENTITY,
-      name VARCHAR(50) UNIQUE NOT NULL,
+      model_name VARCHAR(50) UNIQUE NOT NULL,
       PRIMARY KEY (model_id)
   );`,
 
-  `INSERT INTO aircraft_model (name)
+  `INSERT INTO aircraft_model (model_name)
       VALUES ('A-10 Thunderbolt ii'),
              ('HC-130J Combat King ii'),
              ('HH-60 Pave Hawk')`,
@@ -187,10 +188,17 @@ const preparedSQL = [
 
   `CREATE TABLE location (
       location_id INT GENERATED ALWAYS AS IDENTITY,
+      location_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       name VARCHAR(20),
       track_num SMALLINT,
       PRIMARY KEY (location_id)
   );`,
+
+  `INSERT INTO location (name, track_num)
+      VALUES ('Fort Mooty', 420),
+             ('Mooty 1', 724),
+             ('Mooty 2', 725),
+             ('Mooty 3', 726)`,
 
 
   `CREATE TABLE flight (
@@ -208,6 +216,9 @@ const preparedSQL = [
       FOREIGN KEY (location_id) REFERENCES location (location_id)
   );`,
 
+  `INSERT INTO flight (aircraft_id, location_id, start_time, end_time, color, title, description)
+      VALUES (1, 1, '${moment().format()}', '${moment().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend')`,
+
 
   `CREATE TABLE flight_pilot (
       flight_pilot_id INT GENERATED ALWAYS AS IDENTITY,
@@ -223,8 +234,8 @@ const preparedSQL = [
 
 makeTables();
 async function makeTables() {
-    await setupDatabase(preparedSQL);
-    process.exit();
+  await setupDatabase(preparedSQL);
+  process.exit();
 }
 
 async function setupDatabase(sqlList) {
@@ -235,16 +246,15 @@ async function setupDatabase(sqlList) {
     for(const sql of sqlList) {
       await client.query(sql);    
     }
-} catch (err) {
-    console.log("Postgres Error:\n", err);
-    success = 0;
-}
-if(client) {
     client.release();
-}
-if (success) {
-    console.log("Tables successfully created");
-} else {
-    console.log("Tables failed");
-}
+  } catch (err) {
+      if (client) client.release();
+      console.log("Postgres Error:\n", err);
+      success = 0;
+  }
+  if (success) {
+      console.log("Tables successfully created");
+  } else {
+      console.log("Tables failed");
+  }
 }

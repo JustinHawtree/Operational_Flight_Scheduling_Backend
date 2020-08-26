@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const moment = require('moment');
 const jwtHttpOptions = {
   issuer: "scheduler",
   subject: "Main Auth",
@@ -25,7 +26,9 @@ app.use(cors({
 require('dotenv').config();
 const { Pool } = require('pg');
 const pg = require('pg');
-const { hasUncaughtExceptionCaptureCallback } = require('process');
+
+// Needed for default type date in postgresql to utc, removing Z so javascript on the frontend can easily parse it.
+pg.types.setTypeParser(1114, str => moment.utc(str).format().replace("Z", ""));
 
 const pool = new Pool({
     user: process.env.PGUSER,
@@ -80,8 +83,8 @@ function compareHash(plainPassword, hashPassword) {
 
 function setToken(obj) {
   return new Promise((resolve, reject) => {
-    // Small different way to get UTC timestamp
     let expires_in = 7200;
+    // Small different way to get UTC timestamp
     let tokenDate = new Date().toISOString().replace("Z", "");
     jwt.sign(obj, privateKey, jwtHttpOptions, (error, token) => {
       if (error) {
@@ -113,7 +116,8 @@ async function expectToken(req, res, next) {
     req.token = await decryptToken(req.headers.authorization);
     next();
   } catch (error) {
-    console.log(error);
+    //console.log(error);
+    console.log(error.name, error.message)
     return res.status(400).send({error: 'Authentication Failure: Token Denied'});
   }
 }
@@ -555,11 +559,11 @@ app.delete('/rank/:id', expectToken, expectAdmin, async (req, res) => {
 
 
 app.post('/aircraft_model', expectToken, expectAdmin, async (req, res) => {
-  if (!checkBody(req.body, ['name', 'pilot', 'copilot', 'loader', 'gunner'])){
+  if (!checkBody(req.body, ['name'])){
     console.log("Bad Body");
     return res.sendStatus(400);
   }
-  const SQL = "INSERT INTO aircraft_model (name, pilot, copilot, loader, gunner) VALUES ($1, $2, $3, $4, $5)";
+  const SQL = "INSERT INTO aircraft_model (model_name) VALUES ($1)";
   const values = [req.body.name, req.body.pilot, req.body.copilot, req.body.loader, req.body.gunner];
   let client, sqlResult;
   try {
@@ -620,16 +624,36 @@ app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
   return res.status(201).send({id: sqlResult.rows[0].id});
 });
 
+
+
 app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT aircraft_uuid as id, model_id, status FROM aircraft`;
-  let client, sqlResult;
+  const SQL2 = `SELECT AM.model_id, model_name, position, required
+                  FROM aircraft_model AM, crew_position CP, model_position MP
+                  WHERE AM.model_id = MP.model_id AND CP.crew_position_id = MP.crew_position_id`
+  let client, sqlResult, sql2Result;
+  let modelArray = [];
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL);
-    let modelIdObj = {};
-    for (const item of sqlResult.rows) {
-      if (!modelIdObj[item.model_id]) {
-        modelIdObj[item.model_id] = true; 
+    sql2Result = await client.query(SQL2);
+
+    const findModelId = (id) => {
+      for (let i = 0; i < modelArray.length; i++) {
+        if (modelArray[i].model_id === id) {
+          return i;
+        }
+      }
+      return -1;
+    }
+    let objId;
+    for (let row of sql2Result.rows) {
+      if ((objId = findModelId(row.model_id)) === -1) {
+        modelArray.push({model_id: row.model_id, model_name: row.model_name,
+           positions: [{ position_name: row.position, required: row.required}] });
+      } else {
+        console.log("ObjId:", objId);
+        modelArray[objId].positions.push({ position_name: row.position, required: row.required});
       }
     }
     client.release();
@@ -638,5 +662,44 @@ app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
     console.log("Get airplane error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({airplanes: sqlResult.rows});
+  return res.status(200).send({aircraft_models: modelArray, aircrafts: sqlResult.rows,});
+})
+
+
+
+
+
+app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
+  const SQL = `SELECT location_uuid, name, track_num from location`;
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get Locations error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({locations: sqlResult.rows});
+})
+
+
+
+app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
+  const SQL = `SELECT flight_uuid, aircraft_uuid, location_uuid, start_time, 
+                  end_time, color, title, description 
+                FROM flight FT, aircraft AT, location LT
+                WHERE FT.aircraft_id = AT.aircraft_id AND FT.location_id = LT.location_id`;
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get Flights error", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({flights: sqlResult.rows});
 })
