@@ -216,7 +216,7 @@ app.post('/login', async (req, res) => {
     
     dbClient = await pool.connect();
     
-    const sql = `SELECT password, accepted, role, account_uuid, FROM account WHERE email = $1`;
+    const sql = `SELECT password, accepted, role, account_uuid FROM account WHERE email = $1`;
 
     const result = await dbClient.query(sql, [req.body.email]);
     dbClient.release();
