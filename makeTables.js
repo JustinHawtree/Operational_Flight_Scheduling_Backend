@@ -149,17 +149,31 @@ const preparedSQL = [
              (3, 6),
              (3, 7)`,
 
+/* Denote the status of a specific aircraft */
+`CREATE TABLE aircraft_status (
+    status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+    status VARCHAR(20) UNIQUE NOT NULL,
+    PRIMARY KEY (status)
+);`,
+
+`INSERT INTO aircraft_status (status)
+    VALUES ('Available'),
+           ('Unavailable'),
+           ('In_Maintenance')`,         
+
   `CREATE TABLE aircraft (
       aircraft_id INT GENERATED ALWAYS AS IDENTITY,
       aircraft_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       model_id INT,
-      status VARCHAR(50),
+      status VARCHAR(20),
       PRIMARY KEY(aircraft_id),
-      FOREIGN KEY (model_id) REFERENCES aircraft_model (model_id)
+      FOREIGN KEY (model_id) REFERENCES aircraft_model (model_id),
+      FOREIGN KEY (status) REFERENCES aircraft_status (status)
   );`,
 
+
   `INSERT INTO aircraft (model_id, status)
-      VALUES (2, 'Active')`,
+      VALUES (2, 'Available')`,
 
 
 
