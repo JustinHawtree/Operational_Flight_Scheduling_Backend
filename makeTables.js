@@ -85,12 +85,28 @@ const preparedSQL = [
       role VARCHAR(20) NOT NULL DEFAULT 'User',
       created_on TIMESTAMP,
       last_login TIMESTAMP,
+      status VARCHAR(30),
       FOREIGN KEY (rank_id) REFERENCES rank (rank_id),
       FOREIGN KEY (pilot_status) REFERENCES pilot_status (status),
       FOREIGN KEY (role) REFERENCES role (role_name),
       PRIMARY KEY (account_id)
   );`,
-  //  TODO: make an approved default user
+
+  `CREATE TABLE user_status (
+    status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+    status VARCHAR(30) UNIQUE NOT NULL,
+    PRIMARY KEY (status)
+  );`,
+
+  `INSERT INTO user_status (status)
+      VALUES ('Available'),
+             ('Active_Duty_Available'),
+             ('Deployed_Unavailable'),
+             ('Unavailable')`,   
+
+
+
+   //  TODO: make an approved default user
   `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
       VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
              ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),

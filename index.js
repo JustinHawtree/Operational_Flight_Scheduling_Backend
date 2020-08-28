@@ -305,7 +305,7 @@ app.patch('/account', expectToken, expectAdmin, async (req, res) => {
   }
 
   let SQL = "UPDATE account ";
-  let [stringSet, values] = formatSetPatchSQL(["first_name","last_name","accepted", "rank_id", "pilot_status", "role"], req.body);
+  let [stringSet, values] = formatSetPatchSQL(["first_name","last_name","accepted", "rank_id", "pilot_status", "role", "status"], req.body);
   if (values.length <= 0) {
     console.log("Body didnt have any valid column names for", req.method, req.url);
     return res.sendStatus(400);
