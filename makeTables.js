@@ -68,7 +68,18 @@ const preparedSQL = [
              ('Lieutenant General', 20, 'O-9', 'Lt Ge'),
              ('General', 21, 'O-10', 'Gen'),
              ('General of the Air Force', 22, 'O-10', 'GAF');`,
-  
+
+ `CREATE TABLE user_status (
+      status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+      status VARCHAR(30) UNIQUE NOT NULL,
+      PRIMARY KEY (status)
+  );`,
+            
+  `INSERT INTO user_status (status)
+       VALUES ('Available'),
+              ('Active_Duty_Available'),
+              ('Deployed_Unavailable'),
+              ('Unavailable')`,     
 
   /* General account, holds login info and using the flight experience enum */
   `CREATE TABLE account (
@@ -92,19 +103,6 @@ const preparedSQL = [
       FOREIGN KEY (user_status) REFERENCES user_status (status),
       PRIMARY KEY (account_id)
   );`,
-
-  `CREATE TABLE user_status (
-    status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
-    status VARCHAR(30) UNIQUE NOT NULL,
-    PRIMARY KEY (status)
-  );`,
-
-  `INSERT INTO user_status (status)
-      VALUES ('Available'),
-             ('Active_Duty_Available'),
-             ('Deployed_Unavailable'),
-             ('Unavailable')`,   
-
 
 
    //  TODO: make an approved default user
