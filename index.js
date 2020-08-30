@@ -362,7 +362,20 @@ app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   return res.status(200).send({pilots: sqlResult.rows});
 });
 
-
+app.get('/users', expectToken, expectAdmin, async (req, res) => {
+  let client, sqlResult;
+  try {
+    const SQL = "SELECT * FROM account WHERE role != 'Admin'";
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get waiting for approval error:", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({pilots: sqlResult.rows});
+});
 
 app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['approve'])) {
