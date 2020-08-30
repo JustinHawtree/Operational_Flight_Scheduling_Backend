@@ -26,9 +26,10 @@ const preparedSQL = [
   `DROP TABLE IF EXISTS "rank";`,
   `DROP TABLE IF EXISTS "aircraft";`,
   `DROP TABLE IF EXISTS "aircraft_model";`,
-  'DROP TABLE IF EXISTS "aircraft_status"',
+  `DROP TABLE IF EXISTS "aircraft_status"`,
   `DROP TABLE IF EXISTS "airspace";`,
   `DROP TABLE IF EXISTS "location"`,
+  `DROP TABLE IF EXISTS "user_status"`,
   `DROP EXTENSION IF EXISTS "uuid-ossp";`
 ];
 
