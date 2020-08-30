@@ -19,7 +19,7 @@ const jwtHttpOptions = {
 }
 
 app.use(cors({
-  origin: 'http://localhost:3000'
+  origin: ['http://localhost:3000', 'http://localhost:3001']
 }));
 
 
@@ -28,6 +28,7 @@ const { Pool } = require('pg');
 const pg = require('pg');
 
 // Needed for default type date in postgresql to utc, removing Z so javascript on the frontend can easily parse it.
+// This will only work once the index.js starts, so any timestamps in the makeTables.js still need to explicitly be UTC.
 pg.types.setTypeParser(1114, str => moment.utc(str).format().replace("Z", ""));
 
 const pool = new Pool({
@@ -688,18 +689,48 @@ app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
 
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT flight_uuid, aircraft_uuid, location_uuid, start_time, 
-                  end_time, color, title, description 
-                FROM flight FT, aircraft AT, location LT
-                WHERE FT.aircraft_id = AT.aircraft_id AND FT.location_id = LT.location_id`;
-  let client, sqlResult;
+                  end_time, color, title, description, 
+                  array_agg(json_build_object('pilot_uuid',ACT.account_uuid, 'position_uuid',CP.crew_position_uuid)) as pilots
+                FROM flight FT
+                INNER JOIN aircraft AT
+                ON FT.aircraft_id = AT.aircraft_id
+                INNER JOIN location LT
+                ON FT.location_id = LT.location_id
+                INNER JOIN flight_pilot FP
+                ON FT.flight_id = FP.flight_id
+                INNER JOIN account ACT
+                ON FP.account_id = ACT.account_id
+                INNER JOIN crew_position CP
+                ON FP.crew_position_id = CP.crew_position_id
+                GROUP BY FT.flight_id, ACT.account_uuid, AT.aircraft_uuid, LT.location_uuid`;
+
+  const aircraftSQL = `SELECT DISTINCT ON (aircraft_uuid) aircraft_uuid, model_id, status
+                        FROM aircraft
+                        WHERE aircraft_id IN (
+                          SELECT aircraft_id FROM flight
+                        )`;
+  
+  const locationSQL = `SELECT DISTINCT ON (location_uuid) location_uuid, name, track_num
+                        FROM location
+                        WHERE location_id IN (
+                          SELECT location_id FROM flight
+                        )`
+
+  const pilotSQL = `SELECT DISTINCT ON (account_uuid) account_uuid, first_name, last_name, rank_name, pilot_status`
+  let client, sqlResult, aircraftResults, locationResults;
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL);
+    aircraftResults = await client.query(aircraftSQL);
+    locationResults = await client.query(locationSQL);
     client.release();
   } catch (error) {
     if (client) client.release();
     console.log("Get Flights error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({flights: sqlResult.rows});
+  return res.status(200).send({aircrafts: aircraftResults.rows,
+                              locations: locationResults.rows,
+                              flights: sqlResult.rows
+                               });
 })

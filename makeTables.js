@@ -110,7 +110,8 @@ const preparedSQL = [
   `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
       VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
              ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
-             ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP');`,
+             ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP'),
+             ('user@user.com', '$2b$10$SS6ZJYEsv3eskzRb2m6tSusUt9SXolyrR8Wptggm5Oe4s72KKkBEK', 'User', 'User', '1337', 'User', TRUE, 'N/A');`,
     
 
 
@@ -131,6 +132,7 @@ const preparedSQL = [
   /* The position of a person on any given aircraft */
   `CREATE TABLE crew_position (
       crew_position_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+      crew_position_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       position VARCHAR(30) NOT NULL,
       required BOOLEAN NOT NULL,
       PRIMARY KEY(position, required)
@@ -199,9 +201,6 @@ const preparedSQL = [
 
 
 
-
-
-
   `CREATE TABLE location (
       location_id INT GENERATED ALWAYS AS IDENTITY,
       location_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
@@ -233,7 +232,8 @@ const preparedSQL = [
   );`,
 
   `INSERT INTO flight (aircraft_id, location_id, start_time, end_time, color, title, description)
-      VALUES (1, 1, '${moment().format()}', '${moment().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend')`,
+      VALUES (1, 1, '${moment().utc().format()}', '${moment().utc().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend'),
+             (1, 2, '${moment().utc().add(2, 'h').format()}', '${moment().utc().add(6, 'h').format()}', '#eb8334', 'Mock Flight 2', 'Mock Flight testing backend 2')`,
 
 
   `CREATE TABLE flight_pilot (
@@ -245,7 +245,11 @@ const preparedSQL = [
       FOREIGN KEY (flight_id) REFERENCES flight (flight_id),
       FOREIGN KEY (account_id) REFERENCES account (account_id),
       FOREIGN KEY (crew_position_id) REFERENCES crew_position (crew_position_id)
-  );`
+  );`,
+
+  `INSERT INTO flight_pilot (flight_id, account_id, crew_position_id)
+      VALUES (1, 1, 1),
+             (2, 2, 2)`
 ];
 
 makeTables();
