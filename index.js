@@ -699,23 +699,24 @@ app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
 })
 
 
-
+// json_build_object('pilot_uuid',FP.account_id)
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
-  const SQL = `SELECT flight_uuid, aircraft_uuid, location_uuid, start_time, 
-                  end_time, color, title, description, 
-                  array_agg(json_build_object('pilot_uuid',ACT.account_uuid, 'position_uuid',CP.crew_position_uuid)) as pilots
+  const SQL = `SELECT flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time, end_time, color, title, description,
+                  json_agg(json_build_object('airman_uuid', ACT.account_uuid,  'crew_position_uuid', CP.crew_position_uuid)) as crew_members
                 FROM flight FT
-                INNER JOIN aircraft AT
-                ON FT.aircraft_id = AT.aircraft_id
-                INNER JOIN location LT
-                ON FT.location_id = LT.location_id
                 INNER JOIN flight_pilot FP
                 ON FT.flight_id = FP.flight_id
                 INNER JOIN account ACT
                 ON FP.account_id = ACT.account_id
                 INNER JOIN crew_position CP
                 ON FP.crew_position_id = CP.crew_position_id
-                GROUP BY FT.flight_id, ACT.account_uuid, AT.aircraft_uuid, LT.location_uuid`;
+                INNER JOIN location LN
+                ON FT.location_id = LN.location_id
+                INNER JOIN aircraft AT
+                ON FT.aircraft_id = AT.aircraft_id
+                GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
+                  FT.title, FT.description, LN.location_uuid, AT.aircraft_uuid
+                `;
 
   const aircraftSQL = `SELECT DISTINCT ON (aircraft_uuid) aircraft_uuid, model_id, status
                         FROM aircraft
@@ -727,15 +728,24 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
                         FROM location
                         WHERE location_id IN (
                           SELECT location_id FROM flight
-                        )`
+                        )`;
 
-  const pilotSQL = `SELECT DISTINCT ON (account_uuid) account_uuid, first_name, last_name, rank_name, pilot_status`
-  let client, sqlResult, aircraftResults, locationResults;
+  const airmanSQL = `SELECT DISTINCT ON (account_uuid) account_uuid as airman_uuid, first_name, last_name, rank_name, pilot_status, user_status
+                      FROM flight_pilot FP
+                      INNER JOIN account ACT
+                      ON FP.account_id = ACT.account_id
+                      INNER JOIN rank RK
+                      ON ACT.rank_id = RK.rank_id
+                      WHERE flight_id IN (
+                        SELECT flight_id FROM flight
+                      )`;
+  let client, sqlResult, aircraftResults, locationResults, airmanResults;
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     aircraftResults = await client.query(aircraftSQL);
     locationResults = await client.query(locationSQL);
+    airmanResults = await client.query(airmanSQL);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -744,6 +754,7 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
   }
   return res.status(200).send({aircrafts: aircraftResults.rows,
                               locations: locationResults.rows,
+                              airman: airmanResults.rows,
                               flights: sqlResult.rows
                                });
 })
