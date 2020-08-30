@@ -85,10 +85,11 @@ const preparedSQL = [
       role VARCHAR(20) NOT NULL DEFAULT 'User',
       created_on TIMESTAMP,
       last_login TIMESTAMP,
-      status VARCHAR(30),
+      user_status VARCHAR(30),
       FOREIGN KEY (rank_id) REFERENCES rank (rank_id),
       FOREIGN KEY (pilot_status) REFERENCES pilot_status (status),
       FOREIGN KEY (role) REFERENCES role (role_name),
+      FOREIGN KEY (user_status) REFERENCES user_status (status),
       PRIMARY KEY (account_id)
   );`,
 
