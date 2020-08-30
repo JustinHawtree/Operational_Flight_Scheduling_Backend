@@ -15,7 +15,6 @@ pool.on('error', (err, client) => {
 })
 
 const preparedSQL = [
-  `DROP TABLE IF EXISTS "user_status"`,
   `DROP TABLE IF EXISTS "model_position"`,
   `DROP TABLE IF EXISTS "flight_pilot"`,
   `DROP TABLE IF EXISTS "account";`,
