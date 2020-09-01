@@ -366,7 +366,7 @@ app.get('/approval', expectToken, expectAdmin, async (req, res) => {
 app.get('/users', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
-    const SQL = "SELECT * FROM account WHERE role != 'Admin'";
+    const SQL = "SELECT account_uuid, first_name, last_name, rank_id, pilot_status, role, user_status FROM account WHERE role != 'Admin'";
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     client.release();
