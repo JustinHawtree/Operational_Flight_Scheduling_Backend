@@ -269,13 +269,13 @@ app.post('/login', async (req, res) => {
 app.post('/signup', async (req, res) => {
   let client; 
   try {
-    if (!checkBody(req.body, ['email', 'password', 'first_name', 'last_name', 'military_id'])){
+    if (!checkBody(req.body, ['email', 'password', 'first_name', 'last_name'])){
       console.log("Bad Body");
       return res.sendStatus(400);
     }
     let hashPassword = await getHash(req.body.password);
-    const SQL = "INSERT INTO account(email, password, first_name, last_name, military_id, accepted) VALUES($1, $2, $3, $4, $5, $6)";
-    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, req.body.military_id, false];
+    const SQL = "INSERT INTO account(email, password, first_name, last_name, accepted) VALUES($1, $2, $3, $4, $5)";
+    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, false];
     
     client = await pool.connect();
     let sqlResult = await client.query(SQL, values);
@@ -289,9 +289,6 @@ app.post('/signup', async (req, res) => {
     if (error.code === '23505') {
       if (error.constraint === 'account_email_key') {
         return res.status(400).send({error: "Email is already in use."});
-      } else if (error.constraint === 'account_military_id_key') {
-        return res.status(400).send({error: "Military id is already in use."});
-      }
     }
     return res.sendStatus(500);
   }
@@ -351,7 +348,7 @@ app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
 app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
-    const SQL = "SELECT account_uuid, military_id,  email, first_name, last_name FROM account WHERE accepted = false";
+    const SQL = "SELECT account_uuid, email, first_name, last_name FROM account WHERE accepted = false";
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     client.release();
