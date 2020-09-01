@@ -71,6 +71,7 @@ const preparedSQL = [
 
  `CREATE TABLE user_status (
       status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+      status_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
       status VARCHAR(30) UNIQUE NOT NULL,
       PRIMARY KEY (status)
   );`,
@@ -89,7 +90,6 @@ const preparedSQL = [
       password VARCHAR(100) NOT NULL,
       first_name VARCHAR(50) NOT NULL,
       last_name VARCHAR(50) NOT NULL,
-      military_id VARCHAR(50) UNIQUE NOT NULL,
       accepted BOOLEAN NOT NULL DEFAULT FALSE,
       rank_id INT NOT NULL DEFAULT 1,
       pilot_status VARCHAR(5) DEFAULT 'N/A',
@@ -106,11 +106,14 @@ const preparedSQL = [
 
 
    //  TODO: make an approved default user
-  `INSERT INTO account (email, password, first_name, last_name, military_id, role, accepted, pilot_status)
-      VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', '321', 'Admin', TRUE, 'EP'),
-             ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', '-1', 'Admin', TRUE, 'EP'),
-             ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', '12345', 'Admin', TRUE, 'EP'),
-             ('user@user.com', '$2b$10$SS6ZJYEsv3eskzRb2m6tSusUt9SXolyrR8Wptggm5Oe4s72KKkBEK', 'User', 'User', '1337', 'User', TRUE, 'N/A');`,
+  `INSERT INTO account (email, password, first_name, last_name, role, accepted, pilot_status)
+      VALUES ('admin@home.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'Daniel', 'Lam', 'Admin', TRUE, 'EP'),
+             ('admin@gmail.com', '$2b$10$yXFKoxeb3o/9AWuS5DSyLekD.1cL4Ggu5Wu42Sc.4RthXujCM.IAu', 'Admin', 'Admin', 'Admin', TRUE, 'EP'),
+             ('im@home.com', '$2b$10$w3PHCj3iOKJpUdodvRv6N.yP4DJB9twfrayhcg/42LmSBRjW6QPbS', 'Kenny', 'Cheng', 'Admin', TRUE, 'EP'),
+             ('user@user.com', '$2b$10$SS6ZJYEsv3eskzRb2m6tSusUt9SXolyrR8Wptggm5Oe4s72KKkBEK', 'User', 'User', 'User', TRUE, 'N/A'),
+             ('scheduler@gmail.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'scheduler', 'scheduler', 'Scheduler', TRUE, 'N/A'),
+             ('pilot1@gmail.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'pilotFName1', 'pilotLName1', 'User', TRUE, 'FP'),
+             ('pilot2@gmail.com', '$2b$10$pFjaR2eMGfdpoKnLAXM46uyafjDVbWO8WjpcG.oR9Cspfkmq3W9tK', 'pilotFName2', 'pilotLName2', 'User', TRUE, 'FP');`,
     
 
 
@@ -119,14 +122,15 @@ const preparedSQL = [
 
   `CREATE TABLE aircraft_model (
       model_id INT GENERATED ALWAYS AS IDENTITY,
+      model_uuid uuid UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
       model_name VARCHAR(50) UNIQUE NOT NULL,
       PRIMARY KEY (model_id)
   );`,
 
   `INSERT INTO aircraft_model (model_name)
-      VALUES ('A-10 Thunderbolt ii'),
+      VALUES ('A-10C Thunderbolt ii'),
              ('HC-130J Combat King ii'),
-             ('HH-60 Pave Hawk')`,
+             ('HH-60 Pave Hawk');`,
   
   /* The position of a person on any given aircraft */
   `CREATE TABLE crew_position (
@@ -165,11 +169,12 @@ const preparedSQL = [
              (3, 1),
              (3, 2),
              (3, 6),
-             (3, 7)`,
+             (3, 7);`,
 
 /* Denote the status of a specific aircraft */
 `CREATE TABLE aircraft_status (
     status_id INT GENERATED ALWAYS AS IDENTITY UNIQUE NOT NULL,
+    status_uuid uuid UNIQUE DEFAULT uuid_generate_v4(),
     status VARCHAR(20) UNIQUE NOT NULL,
     PRIMARY KEY (status)
 );`,
@@ -177,7 +182,7 @@ const preparedSQL = [
 `INSERT INTO aircraft_status (status)
     VALUES ('Available'),
            ('Unavailable'),
-           ('In_Maintenance')`,         
+           ('Under_Maintenance');`,         
 
   `CREATE TABLE aircraft (
       aircraft_id INT GENERATED ALWAYS AS IDENTITY,
@@ -191,7 +196,8 @@ const preparedSQL = [
 
 
   `INSERT INTO aircraft (model_id, status)
-      VALUES (2, 'Available')`,
+      VALUES (2, 'Available'),
+             (2, 'Available');`,
 
 
 
@@ -212,7 +218,7 @@ const preparedSQL = [
       VALUES ('Fort Mooty', 420),
              ('Mooty 1', 724),
              ('Mooty 2', 725),
-             ('Mooty 3', 726)`,
+             ('Mooty 3', 726);`,
 
 
   `CREATE TABLE flight (
@@ -232,7 +238,7 @@ const preparedSQL = [
 
   `INSERT INTO flight (aircraft_id, location_id, start_time, end_time, color, title, description)
       VALUES (1, 1, '${moment().utc().format()}', '${moment().utc().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend'),
-             (1, 2, '${moment().utc().add(2, 'h').format()}', '${moment().utc().add(6, 'h').format()}', '#eb8334', 'Mock Flight 2', 'Mock Flight testing backend 2')`,
+             (2, 2, '${moment().utc().add(2, 'h').format()}', '${moment().utc().add(6, 'h').format()}', '#eb8334', 'Mock Flight 2', 'Mock Flight testing backend 2');`,
 
 
   `CREATE TABLE flight_pilot (
@@ -249,7 +255,7 @@ const preparedSQL = [
   `INSERT INTO flight_pilot (flight_id, account_id, crew_position_id)
       VALUES (1, 1, 1),
              (1, 2, 2),
-             (2, 2, 1)`
+             (2, 2, 1);`
 ];
 
 makeTables();

@@ -372,7 +372,7 @@ app.get('/users', expectToken, expectAdmin, async (req, res) => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    console.log("Get waiting for approval error:", error);
+    console.log("Get users error:", error);
     return res.sendStatus(500);
   }
   return res.status(200).send({pilots: sqlResult.rows});
@@ -642,9 +642,14 @@ app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
 
 app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT aircraft_uuid as id, model_id, status FROM aircraft`;
-  const SQL2 = `SELECT AM.model_id, model_name, position, required
-                  FROM aircraft_model AM, crew_position CP, model_position MP
-                  WHERE AM.model_id = MP.model_id AND CP.crew_position_id = MP.crew_position_id`
+  const SQL2 = `SELECT AM.model_uuid, AM.model_name,
+                  json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid, 'position_name', CP.position, 'required', CP.required) ) as positions
+                  FROM aircraft_model AM
+                  INNER JOIN model_position MP
+                  ON AM.model_id = MP.model_id
+                  INNER JOIN crew_position CP
+                  ON MP.crew_position_id = CP.crew_position_id
+                  GROUP BY AM.model_uuid, AM.model_name `;
   let client, sqlResult, sql2Result;
   let modelArray = [];
   try {
@@ -652,32 +657,14 @@ app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
     sqlResult = await client.query(SQL);
     sql2Result = await client.query(SQL2);
 
-    const findModelId = (id) => {
-      for (let i = 0; i < modelArray.length; i++) {
-        if (modelArray[i].model_id === id) {
-          return i;
-        }
-      }
-      return -1;
-    }
-    let objId;
-    for (let row of sql2Result.rows) {
-      if ((objId = findModelId(row.model_id)) === -1) {
-        modelArray.push({model_id: row.model_id, model_name: row.model_name,
-           positions: [{ position_name: row.position, required: row.required}] });
-      } else {
-        console.log("ObjId:", objId);
-        modelArray[objId].positions.push({ position_name: row.position, required: row.required});
-      }
-    }
     client.release();
   } catch (error) {
     if (client) client.release();
     console.log("Get airplane error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({aircraft_models: modelArray, aircrafts: sqlResult.rows,});
-})
+  return res.status(200).send({aircraft_models: sql2Result.rows, aircrafts: sqlResult.rows,});
+});
 
 
 
@@ -696,13 +683,108 @@ app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
     return res.sendStatus(500);
   }
   return res.status(200).send({locations: sqlResult.rows});
+});
+
+
+
+app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
+  console.log("Query?:", req.query);
+  if (!req.query.start || !req.query.end) {
+    console.log("Get Essential Error: did not have all required paramters");
+    return res.sendStatus(400);
+  }
+  if (isNaN(Date.parse(req.query.start)) || isNaN(Date.parse(req.query.end))) {
+    console.log("Get Essential Error: Query Parameters are not valid dates");
+    return res.sendStatus(400);
+  }
+
+  const aircraftSQL = `SELECT aircraft_uuid as uuid, model_uuid, status
+                        FROM aircraft AT
+                        INNER JOIN aircraft_model AM
+                        ON AT.model_id = AM.model_id
+                      `;
+  
+  const locationSQL = `SELECT location_uuid as uuid, name, track_num
+                        FROM location
+                      `;
+
+  const crewPositionSQL = `SELECT crew_position_uuid as uuid, position, required
+                            FROM crew_position`
+
+  const airmenSQL = `SELECT account_uuid as uuid, first_name, last_name, rank_name, pilot_status, user_status
+                      FROM account ACT
+                      INNER JOIN rank RK
+                      ON ACT.rank_id = RK.rank_id
+                      WHERE role = 'User'
+                    `;
+  
+  const aircraftModelSQL = `SELECT AM.model_uuid as uuid, AM.model_name,
+                  json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid) ) as positions
+                  FROM aircraft_model AM
+                  INNER JOIN model_position MP
+                  ON AM.model_id = MP.model_id
+                  INNER JOIN crew_position CP
+                  ON MP.crew_position_id = CP.crew_position_id
+                  GROUP BY AM.model_uuid, AM.model_name `;
+
+  const flightSQL = `SELECT flight_uuid as uuid, flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
+                  json_agg( json_build_object('airman_uuid', ACT.account_uuid, 'crew_position_uuid', CP.crew_position_uuid) ) as crew_members
+                FROM flight FT
+                INNER JOIN flight_pilot FP
+                ON FT.flight_id = FP.flight_id
+                INNER JOIN account ACT
+                ON FP.account_id = ACT.account_id
+                INNER JOIN crew_position CP
+                ON FP.crew_position_id = CP.crew_position_id
+                INNER JOIN location LN
+                ON FT.location_id = LN.location_id
+                INNER JOIN aircraft AT
+                ON FT.aircraft_id = AT.aircraft_id
+                WHERE FT.end_time > $1 OR FT.start_time < $2
+                GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
+                  FT.title, FT.description, LN.location_uuid, AT.aircraft_uuid
+                `;
+  const flightSQLValues = [req.query.start, req.query.end];
+  let client;
+  try {
+    client = await pool.connect();
+
+    let promises = [];
+    promises.push(client.query(aircraftSQL));
+    promises.push(client.query(locationSQL));
+    promises.push(client.query(crewPositionSQL));
+    promises.push(client.query(airmenSQL));
+    promises.push(client.query(aircraftModelSQL));
+    promises.push(client.query(flightSQL, flightSQLValues));
+
+    let responseHeaders = ["aircrafts", "locations", "crew_positions", "airmen", "aircraft_models", "flights"];
+    let responsePayload = {};
+
+    await Promise.all(promises).then((results) => {
+      results.forEach((response, index) => {
+        let tempObj = {};
+        response.rows.forEach((item) => {
+          let uuid = item.uuid;
+          delete item.uuid
+          tempObj[uuid] = item; 
+        })
+        responsePayload[responseHeaders[index]] = tempObj;
+      })
+    })
+    client.release();
+    res.status(200).send(responsePayload);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Error:", error);
+    return res.sendStatus(500);
+  }
 })
 
 
-// json_build_object('pilot_uuid',FP.account_id)
+
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
-  const SQL = `SELECT flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time, end_time, color, title, description,
-                  json_agg(json_build_object('airman_uuid', ACT.account_uuid,  'crew_position_uuid', CP.crew_position_uuid)) as crew_members
+  const SQL = `SELECT flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
+                  json_agg( json_build_object('airman_uuid', ACT.account_uuid, 'crew_position_uuid', CP.crew_position_uuid) ) as crew_members
                 FROM flight FT
                 INNER JOIN flight_pilot FP
                 ON FT.flight_id = FP.flight_id
@@ -718,43 +800,20 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
                   FT.title, FT.description, LN.location_uuid, AT.aircraft_uuid
                 `;
 
-  const aircraftSQL = `SELECT DISTINCT ON (aircraft_uuid) aircraft_uuid, model_id, status
-                        FROM aircraft
-                        WHERE aircraft_id IN (
-                          SELECT aircraft_id FROM flight
-                        )`;
+  let client, sqlResult;
   
-  const locationSQL = `SELECT DISTINCT ON (location_uuid) location_uuid, name, track_num
-                        FROM location
-                        WHERE location_id IN (
-                          SELECT location_id FROM flight
-                        )`;
-
-  const airmanSQL = `SELECT DISTINCT ON (account_uuid) account_uuid as airman_uuid, first_name, last_name, rank_name, pilot_status, user_status
-                      FROM flight_pilot FP
-                      INNER JOIN account ACT
-                      ON FP.account_id = ACT.account_id
-                      INNER JOIN rank RK
-                      ON ACT.rank_id = RK.rank_id
-                      WHERE flight_id IN (
-                        SELECT flight_id FROM flight
-                      )`;
-  let client, sqlResult, aircraftResults, locationResults, airmanResults;
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL);
-    aircraftResults = await client.query(aircraftSQL);
-    locationResults = await client.query(locationSQL);
-    airmanResults = await client.query(airmanSQL);
     client.release();
   } catch (error) {
     if (client) client.release();
     console.log("Get Flights error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({aircrafts: aircraftResults.rows,
-                              locations: locationResults.rows,
-                              airman: airmanResults.rows,
-                              flights: sqlResult.rows
-                               });
-})
+  return res.status(200).send(
+    { 
+      flights: sqlResult.rows
+    }
+  );
+});
