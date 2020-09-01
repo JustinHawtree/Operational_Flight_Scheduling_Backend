@@ -289,6 +289,7 @@ app.post('/signup', async (req, res) => {
     if (error.code === '23505') {
       if (error.constraint === 'account_email_key') {
         return res.status(400).send({error: "Email is already in use."});
+      }
     }
     return res.sendStatus(500);
   }
