@@ -734,7 +734,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
 
 
   const flightSQL = `SELECT FT.flight_uuid as uuid, FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
-                        array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL) as crew_members
+                        COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
                       FROM flight FT
                       LEFT OUTER JOIN flight_crew FC
                       ON FT.flight_uuid = FC.flight_uuid
@@ -782,7 +782,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
 
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description,
-                  array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL) as crew_members
+                  COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
                 FROM flight FT
                 LEFT OUTER JOIN flight_crew FC
                 ON FT.flight_uuid = FC.flight_uuid
