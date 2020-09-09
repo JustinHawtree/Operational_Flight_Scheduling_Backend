@@ -117,8 +117,14 @@ async function expectToken(req, res, next) {
     req.token = await decryptToken(req.headers.authorization);
     next();
   } catch (error) {
-    //console.log(error);
-    console.log(error.name, error.message)
+    let errorString = "Expected Token Error: ";
+    if (error.name || error.message) {
+      errorString += "Error Name:" + error.name+" ";
+      errorString += "Error Message:" + error.message;
+    } else {
+      errorString += error;
+    }
+    console.log(errorString);
     return res.status(400).send({error: 'Authentication Failure: Token Denied'});
   }
 }
@@ -158,7 +164,7 @@ function checkBody(body, params) {
   if (!body) return false;
   
   for (const param of params) {
-    if(!body[param]) return false;
+    if (typeof body[param] === 'undefined'|| body[param] === null) return false;
   }
   return true;
 }
@@ -170,7 +176,7 @@ function formatSetPatchSQL(validArray, body) {
   let setArray = ["SET "];
 
   for (let i = 0; i < validArray.length; i++) {
-    validObj[validArray[i]] = 1;
+    validObj[validArray[i]] = true;
   }
 
   let valuePos = 1;
@@ -186,8 +192,11 @@ function formatSetPatchSQL(validArray, body) {
   })
 
   let stringSet = setArray.join("").slice(0, -1);
-
-  return [stringSet, values]
+  if (values.length !== 0) {
+    return [stringSet, values];
+  } else {
+    return [null, []];
+  }
 }
 
 
@@ -697,9 +706,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
   }
 
   const aircraftSQL = `SELECT aircraft_uuid as uuid, model_uuid, status
-                        FROM aircraft AT
-                        INNER JOIN aircraft_model AM
-                        ON AT.model_id = AM.model_id
+                        FROM aircraft
                       `;
   
   const locationSQL = `SELECT location_uuid as uuid, name, track_num
@@ -712,7 +719,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const airmenSQL = `SELECT account_uuid as uuid, first_name, last_name, rank_name, pilot_status, user_status
                       FROM account ACT
                       INNER JOIN rank RK
-                      ON ACT.rank_id = RK.rank_id
+                      ON ACT.rank_uuid = RK.rank_uuid
                       WHERE role = 'User'
                     `;
   
@@ -720,28 +727,21 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
                   json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid) ) as positions
                   FROM aircraft_model AM
                   INNER JOIN model_position MP
-                  ON AM.model_id = MP.model_id
+                  ON AM.model_uuid = MP.model_uuid
                   INNER JOIN crew_position CP
-                  ON MP.crew_position_id = CP.crew_position_id
+                  ON MP.crew_position_uuid = CP.crew_position_uuid
                   GROUP BY AM.model_uuid, AM.model_name `;
 
-  const flightSQL = `SELECT flight_uuid as uuid, flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
-                  json_agg( json_build_object('airman_uuid', ACT.account_uuid, 'crew_position_uuid', CP.crew_position_uuid) ) as crew_members
-                FROM flight FT
-                INNER JOIN flight_pilot FP
-                ON FT.flight_id = FP.flight_id
-                INNER JOIN account ACT
-                ON FP.account_id = ACT.account_id
-                INNER JOIN crew_position CP
-                ON FP.crew_position_id = CP.crew_position_id
-                INNER JOIN location LN
-                ON FT.location_id = LN.location_id
-                INNER JOIN aircraft AT
-                ON FT.aircraft_id = AT.aircraft_id
-                WHERE FT.end_time > $1 OR FT.start_time < $2
-                GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
-                  FT.title, FT.description, LN.location_uuid, AT.aircraft_uuid
-                `;
+
+  const flightSQL = `SELECT FT.flight_uuid as uuid, FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
+                        array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL) as crew_members
+                      FROM flight FT
+                      LEFT OUTER JOIN flight_crew FC
+                      ON FT.flight_uuid = FC.flight_uuid
+                      WHERE FT.end_time > $1 OR FT.start_time < $2
+                      GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
+                        FT.title, FT.description, location_uuid, aircraft_uuid
+                    `;
   const flightSQLValues = [req.query.start, req.query.end];
   let client;
   try {
@@ -781,23 +781,14 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
 
 
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
-  const SQL = `SELECT flight_uuid, LN.location_uuid, AT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
-                  json_agg( json_build_object('airman_uuid', ACT.account_uuid, 'crew_position_uuid', CP.crew_position_uuid) ) as crew_members
+  const SQL = `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description,
+                  array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL) as crew_members
                 FROM flight FT
-                INNER JOIN flight_pilot FP
-                ON FT.flight_id = FP.flight_id
-                INNER JOIN account ACT
-                ON FP.account_id = ACT.account_id
-                INNER JOIN crew_position CP
-                ON FP.crew_position_id = CP.crew_position_id
-                INNER JOIN location LN
-                ON FT.location_id = LN.location_id
-                INNER JOIN aircraft AT
-                ON FT.aircraft_id = AT.aircraft_id
+                LEFT OUTER JOIN flight_crew FC
+                ON FT.flight_uuid = FC.flight_uuid
                 GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
-                  FT.title, FT.description, LN.location_uuid, AT.aircraft_uuid
+                  FT.title, FT.description, location_uuid, aircraft_uuid
                 `;
-
   let client, sqlResult;
   
   try {
@@ -814,4 +805,176 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
       flights: sqlResult.rows
     }
   );
+});
+
+
+
+app.post('/flights', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  if (!checkBody(req.body, ['aircraft_uuid', 'location_uuid', 'start_time', 
+      'end_time', 'color', 'title', 'description', 'all_day', 'crew_members'])) {
+    console.log("POST airplane bad body");
+    return res.sendStatus(400);
+  }
+
+  const SQL = `INSERT INTO flight (aircraft_uuid, location_uuid, start_time, end_time, color, title, description, all_day)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING flight_uuid`;
+  const values = [req.body.aircraft_uuid, req.body.location_uuid, req.body.start_time, req.body.end_time, req.body.color, req.body.title, req.body.description, req.body.all_day];
+  let sqlResult, client;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Post Flights Error:", error);
+    return res.sendStatus(500);
+  }
+
+  let flight_uuid = sqlResult.rows[0].flight_uuid;
+  // Need to use this value to insert pilots
+
+  // Insert all the associated pilots to the flight
+  if (req.body.crew_members && req.body.crew_members.length > 0) {
+    let insertArray = [];
+    let valuesArray = [];
+    let crewMembersInsertSQL = "INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES ";
+    insertArray.push(crewMembersInsertSQL);
+
+    let valuesIndex = 1;
+    for (const item of req.body.crew_members) {
+      insertArray.push("(");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ")");
+      insertArray.push(",");
+      valuesArray.push(flight_uuid, item.airman_uuid, item.crew_position_uuid);
+    };
+    insertArray.pop();
+    insertArray.push(";");
+    let sqlString = insertArray.join("");
+
+    try {
+      let sql2Result = await client.query(sqlString, valuesArray);
+      client.release();
+    } catch(error) {
+      if (client) client.release();
+      console.log("Post Flights Error:", error);
+      return res.sendStatus(500);
+    }
+
+
+  } else {
+    if (client) client.release();
+  }
+
+  return res.status(201).send(
+    {
+      flight_uuid: sqlResult.rows[0].flight_uuid
+    }
+  )
+});
+
+
+app.patch('/flights/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+  let client;
+  let SQL = "UPDATE flight ";
+  let [stringSet, values] = formatSetPatchSQL(['aircraft_uuid', 'location_uuid', 'start_time', 'end_time',
+    'color', 'title', 'description', 'all_day'], req.body);
+  
+  if (values.length <= 0) {
+    if (!req.body.crew_members) {
+      console.log("Body didnt have any valid column names for:", req.method, req.url);
+      return res.sendStatus(400);
+    }
+  }
+  
+  if (values !== null && stringSet !== null) {
+    SQL += (stringSet + ` WHERE flight_uuid = $${values.length+1}`);
+    values.push(req.params.uuid);
+
+    let sqlResult;
+    try {
+      client = await pool.connect();
+      sqlResult = await client.query(SQL, values);
+      // client.release();
+    } catch (error) {
+      if (client) client.release();
+      console.log("Patch Flights Error:", error);
+      return res.sendStatus(500);
+    }
+  }
+
+  if (req.body.crew_members && Array.isArray(req.body.crew_members)) {
+    let deleteSQL = "DELETE FROM flight_crew WHERE flight_uuid = $1";
+    let deleteResult;
+    try {
+      if (!client) client = await pool.connect();
+      deleteResult = await client.query(deleteSQL, [req.params.uuid]);
+    } catch (error) {
+      if (client) client.release();
+      console.log("Patch Flights Error - Deleting:", error);
+      return res.sendStatus(500);
+    }
+
+    if (req.body.crew_members.length > 0) {
+      let insertArray = [];
+      let valuesArray = [];
+      let crewMembersInsertSQL = "INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES ";
+      insertArray.push(crewMembersInsertSQL);
+
+      let valuesIndex = 1;
+      for (const item of req.body.crew_members) {
+        insertArray.push("(");
+        insertArray.push(`$${valuesIndex++}` + ", ");
+        insertArray.push(`$${valuesIndex++}` + ", ");
+        insertArray.push(`$${valuesIndex++}` + ")");
+        insertArray.push(",");
+        valuesArray.push(req.params.uuid, item.airman_uuid, item.crew_position_uuid);
+      };
+      insertArray.pop();
+      insertArray.push(";");
+      let sqlString = insertArray.join("");
+
+      try {
+        let sql2Result = await client.query(sqlString, valuesArray);
+        client.release();
+      } catch(error) {
+        if (client) client.release();
+        console.log("Post Flights Error - Insert Crews:", error);
+        return res.sendStatus(500);
+      }
+    } else {
+      if (client) client.release();
+    }
+  } else {
+    if (client) client.release();
+  }
+
+  return res.sendStatus(200);
+});
+
+
+app.delete('/flights/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+
+  let SQL = "DELETE FROM flight WHERE flight_uuid = $1";
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [req.params.uuid]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("DELETE Flights error", error);
+    return res.sendStatus(500);
+  }
+
+  return res.sendStatus(200);
 });
