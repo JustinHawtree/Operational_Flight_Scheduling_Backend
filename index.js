@@ -29,7 +29,7 @@ const pg = require('pg');
 
 // Needed for default type date in postgresql to utc, removing Z so javascript on the frontend can easily parse it.
 // This will only work once the index.js starts, so any timestamps in the makeTables.js still need to explicitly be UTC.
-pg.types.setTypeParser(1114, str => moment.utc(str).format().replace("Z", ""));
+pg.types.setTypeParser(1114, str => moment.utc(str).format());
 
 const pool = new Pool({
     user: process.env.PGUSER,
@@ -158,13 +158,14 @@ function expectAdmin_Scheduler(req, res, next) {
 }
 
 
-
-
 function checkBody(body, params) {
   if (!body) return false;
   
   for (const param of params) {
-    if (typeof body[param] === 'undefined'|| body[param] === null) return false;
+    if (typeof body[param] === 'undefined'|| body[param] === null) {
+      console.log("Body Error: Body is missing param:", param);
+      return false;
+    }
   }
   return true;
 }
@@ -215,10 +216,6 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use(bodyParser.json());
-
-
-
-
 
 
 
@@ -370,6 +367,7 @@ app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   return res.status(200).send({pilots: sqlResult.rows});
 });
 
+
 app.get('/users', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
@@ -384,6 +382,7 @@ app.get('/users', expectToken, expectAdmin, async (req, res) => {
   }
   return res.status(200).send({pilots: sqlResult.rows});
 });
+
 
 app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['approve'])) {
@@ -429,18 +428,6 @@ app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
   }
   res.sendStatus(200);
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 app.post('/rank', expectToken, expectAdmin, async (req, res) => {
@@ -569,16 +556,6 @@ app.delete('/rank/:id', expectToken, expectAdmin, async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
-
-
 app.post('/aircraft_model', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['name'])){
     console.log("Bad Body");
@@ -617,13 +594,6 @@ app.get('/aircraft_model/:id', expectToken, expectAdmin_Scheduler, async (req, r
 });
 
 
-
-
-
-
-
-
-
 // TODO airplanes might need a id or serial number between other airplanes? I guess we can use table id for now
 app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['model_id', 'status'])){
@@ -644,7 +614,6 @@ app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
   }
   return res.status(201).send({id: sqlResult.rows[0].id});
 });
-
 
 
 app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
@@ -674,9 +643,6 @@ app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
 });
 
 
-
-
-
 app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT location_uuid, name, track_num from location`;
   let client, sqlResult;
@@ -693,7 +659,6 @@ app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
 });
 
 
-
 app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
   console.log("Query?:", req.query);
   if (!req.query.start || !req.query.end) {
@@ -705,25 +670,25 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
     return res.sendStatus(400);
   }
 
-  const aircraftSQL = `SELECT aircraft_uuid as uuid, model_uuid, status
+  const aircraftSQL = `SELECT aircraft_uuid, model_uuid, status
                         FROM aircraft
                       `;
   
-  const locationSQL = `SELECT location_uuid as uuid, name, track_num
+  const locationSQL = `SELECT location_uuid, location_name, track_num
                         FROM location
                       `;
 
-  const crewPositionSQL = `SELECT crew_position_uuid as uuid, position, required
+  const crewPositionSQL = `SELECT crew_position_uuid, position, required
                             FROM crew_position`
 
-  const airmenSQL = `SELECT account_uuid as uuid, first_name, last_name, rank_name, pilot_status, user_status
+  const airmenSQL = `SELECT account_uuid, first_name, last_name, rank_name, pilot_status, user_status
                       FROM account ACT
                       INNER JOIN rank RK
                       ON ACT.rank_uuid = RK.rank_uuid
                       WHERE role = 'User'
                     `;
   
-  const aircraftModelSQL = `SELECT AM.model_uuid as uuid, AM.model_name,
+  const aircraftModelSQL = `SELECT AM.model_uuid, AM.model_name,
                   json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid) ) as positions
                   FROM aircraft_model AM
                   INNER JOIN model_position MP
@@ -733,7 +698,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
                   GROUP BY AM.model_uuid, AM.model_name `;
 
 
-  const flightSQL = `SELECT FT.flight_uuid as uuid, FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description,
+  const flightSQL = `SELECT FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description, all_day as allDay,
                         COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
                       FROM flight FT
                       LEFT OUTER JOIN flight_crew FC
@@ -760,13 +725,7 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
 
     await Promise.all(promises).then((results) => {
       results.forEach((response, index) => {
-        let tempObj = {};
-        response.rows.forEach((item) => {
-          let uuid = item.uuid;
-          delete item.uuid
-          tempObj[uuid] = item; 
-        })
-        responsePayload[responseHeaders[index]] = tempObj;
+        responsePayload[responseHeaders[index]] = response.rows;
       })
     })
     client.release();
@@ -779,9 +738,8 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
 })
 
 
-
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
-  const SQL = `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description,
+  const SQL = `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description, all_day as allDay,
                   COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
                 FROM flight FT
                 LEFT OUTER JOIN flight_crew FC
@@ -808,8 +766,7 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
 });
 
 
-
-app.post('/flights', expectToken, expectAdmin_Scheduler, async(req, res) => {
+app.post('/flight', expectToken, expectAdmin_Scheduler, async(req, res) => {
   if (!checkBody(req.body, ['aircraft_uuid', 'location_uuid', 'start_time', 
       'end_time', 'color', 'title', 'description', 'all_day', 'crew_members'])) {
     console.log("POST airplane bad body");
@@ -830,8 +787,8 @@ app.post('/flights', expectToken, expectAdmin_Scheduler, async(req, res) => {
     return res.sendStatus(500);
   }
 
-  let flight_uuid = sqlResult.rows[0].flight_uuid;
   // Need to use this value to insert pilots
+  let flight_uuid = sqlResult.rows[0].flight_uuid;
 
   // Insert all the associated pilots to the flight
   if (req.body.crew_members && req.body.crew_members.length > 0) {
@@ -875,7 +832,96 @@ app.post('/flights', expectToken, expectAdmin_Scheduler, async(req, res) => {
 });
 
 
-app.patch('/flights/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+app.put('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+
+  let bodyArray = ['aircraft_uuid', 'location_uuid', 'start_time', 'end_time',
+  'color', 'title', 'description', 'all_day', 'crew_members'];
+  
+  if (!checkBody(req.body, bodyArray)) {
+    console.log("Put Flights Error: Bad Body");
+    return res.sendStatus(400);
+  }
+
+  // TODO: need to check to see if it does not exist in the table
+  //       if it does not exist in the table already then add it to the table and return
+  //       back the resulting flight_uuid
+
+  // Remove crew_members to just update flight table
+  bodyArray.pop();
+
+  let index = 1;
+  let updateArray =  [`UPDATE flight SET `];
+  let valuesArray = [];
+  for (const item of bodyArray) {
+    valuesArray.push(req.body[item]);
+    updateArray.push(`${item} = $${index++}`);
+    updateArray.push(', ');
+  }
+  updateArray.pop();
+  updateArray.push(`WHERE flight_uuid = $${index}`);
+  valuesArray.push(req.params.uuid);
+  let sqlUpdate = updateArray.join("");
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query(sqlUpdate, valuesArray);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Put Flights Error:", error);
+    return res.sendStatus(500);
+  }
+
+  if (Array.isArray(req.body.crew_members)) {
+    let deleteSQL = "DELETE FROM flight_crew WHERE flight_uuid = $1";
+    try {
+      await client.query(deleteSQL, [req.params.uuid]);
+    } catch (error) {
+      if (client) client.release();
+      console.log("Put Flights Error - Deleting:", error);
+      return res.sendStatus(500);
+    }
+
+
+    let valuesArray = [];
+    let insertArray = ["INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES "];
+
+    let valuesIndex = 1;
+    for (const item of req.body.crew_members) {
+      insertArray.push("(");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ")");
+      insertArray.push(",");
+      valuesArray.push(req.params.uuid, item.airman_uuid, item.crew_position_uuid);
+    };
+    insertArray.pop();
+    insertArray.push(";");
+    let sqlString = insertArray.join("");
+
+    try {
+      let sql2Result = await client.query(sqlString, valuesArray);
+      client.release();
+    } catch(error) {
+      if (client) client.release();
+      console.log("Post Flights Error - Insert Crews:", error);
+      return res.sendStatus(500);
+    }
+
+  } else {
+    console.log("Put Flights: Crew_Members array is malformed or not an array");
+    return res.sendStatus(400);
+  }
+
+  res.sendStatus(200);
+});
+
+
+app.patch('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
   // Make sure the parameter is a uuid
   if (!validator.isUUID(req.params.uuid, 4)) {
     return res.sendStatus(400);
@@ -958,7 +1004,7 @@ app.patch('/flights/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) 
 });
 
 
-app.delete('/flights/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+app.delete('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
   // Make sure the parameter is a uuid
   if (!validator.isUUID(req.params.uuid, 4)) {
     return res.sendStatus(400);
