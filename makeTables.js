@@ -10,6 +10,14 @@ const pool = new Pool({
   port: process.env.PGPORT
 });
 
+// TODO:
+  // Create another table that links users to a universal crew position "rank"
+  // Create another table that links universal ranks to crew_positions
+  // Aircrafts need an generated id like  MY 12-3456
+    // First 2 Letters represent the Aircraft Base Code
+    // First 2 Numbers represent the year of order for that aircraft
+    // Last 4 Numbers is in serial from that ordered year of aircrafts 
+
 pool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err);
   process.exit(-1);
@@ -130,8 +138,8 @@ const preparedSQL = [
   );`,
 
   `INSERT INTO aircraft_model (model_uuid, model_name)
-      VALUES ('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'A-10C Thunderbolt ii'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'HC-130J Combat King ii'),
+      VALUES ('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'A-10C Thunderbolt Ⅱ'),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'HC-130J Combat King Ⅱ'),
              ('db2863ea-369e-4262-ad17-bda986ae9632', 'HH-60 Pave Hawk');`,
   
   /* The position of a person on any given aircraft */
@@ -189,7 +197,7 @@ const preparedSQL = [
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
       status VARCHAR(20),
-      PRIMARY KEY(aircraft_uuid),
+      PRIMARY KEY (aircraft_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (status) REFERENCES aircraft_status (status)
   );`,
@@ -197,18 +205,19 @@ const preparedSQL = [
 
   `INSERT INTO aircraft (aircraft_uuid, model_uuid, status)
       VALUES ('63c6821a-fb98-418b-9336-c60beb837708', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'Available'),
-             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'Available');`,
+             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'db2863ea-369e-4262-ad17-bda986ae9632', 'Available'),
+             ('475eb3d2-5b9a-4efc-8a09-96849a136b00', 'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'Available');`,
 
 
 
   `CREATE TABLE location (
       location_uuid UUID DEFAULT uuid_generate_v4(),
-      name VARCHAR(20),
+      location_name VARCHAR(20),
       track_num SMALLINT,
       PRIMARY KEY (location_uuid)
   );`,
 
-  `INSERT INTO location (location_uuid, name, track_num)
+  `INSERT INTO location (location_uuid, location_name, track_num)
       VALUES ('96017add-cf3d-4075-b09b-7fd9ad690e04', 'Fort Mooty', 420),
              ('ea703189-31ea-4235-bdbb-b017731fb29c', 'Mooty 1', 724),
              ('40ba35ba-92a9-4255-8960-e47b83df1cd0', 'Mooty 2', 725),
@@ -243,7 +252,7 @@ const preparedSQL = [
       crew_position_uuid UUID,
       PRIMARY KEY (flight_crew_uuid),
       FOREIGN KEY (flight_uuid) REFERENCES flight (flight_uuid) ON DELETE CASCADE,
-      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid),
+      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid) ON DELETE CASCADE,
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   );`,
 
