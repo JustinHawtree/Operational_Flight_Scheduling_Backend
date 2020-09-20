@@ -163,22 +163,23 @@ const preparedSQL = [
       model_position_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
       crew_position_uuid UUID,
+      position_order SMALLINT,
       PRIMARY KEY (model_position_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   )`,
 
-  `INSERT INTO model_position (model_uuid, crew_position_uuid)
-      VALUES ('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'b15bd146-0d92-4080-9740-2112fed365fd'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'b15bd146-0d92-4080-9740-2112fed365fd'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', '991dd169-dc45-4049-8a8d-58173d66223b'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'f45f9297-c7af-40ef-88cc-6c137e44b534'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'e770fd78-2d5a-4065-a01c-8dcb1cd2e558'),
-             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', '0ddfcd5e-54e8-4571-8fdf-3630fd484f6c'),
-             ('db2863ea-369e-4262-ad17-bda986ae9632', 'b15bd146-0d92-4080-9740-2112fed365fd'),
-             ('db2863ea-369e-4262-ad17-bda986ae9632', '991dd169-dc45-4049-8a8d-58173d66223b'),
-             ('db2863ea-369e-4262-ad17-bda986ae9632', '1785b149-862d-46ca-b4cd-73b975de19dd'),
-             ('db2863ea-369e-4262-ad17-bda986ae9632', 'f6d5268e-69d4-4cd0-b932-610341143548');`,
+  `INSERT INTO model_position (model_uuid, crew_position_uuid, position_order)
+      VALUES ('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'b15bd146-0d92-4080-9740-2112fed365fd', 1),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'b15bd146-0d92-4080-9740-2112fed365fd', 1),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', '991dd169-dc45-4049-8a8d-58173d66223b', 2),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'f45f9297-c7af-40ef-88cc-6c137e44b534', 3),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'e770fd78-2d5a-4065-a01c-8dcb1cd2e558', 4),
+             ('2c04be67-fc24-4eba-b6ca-57c81daab9c4', '0ddfcd5e-54e8-4571-8fdf-3630fd484f6c', 5),
+             ('db2863ea-369e-4262-ad17-bda986ae9632', 'b15bd146-0d92-4080-9740-2112fed365fd', 1),
+             ('db2863ea-369e-4262-ad17-bda986ae9632', '991dd169-dc45-4049-8a8d-58173d66223b', 2),
+             ('db2863ea-369e-4262-ad17-bda986ae9632', '1785b149-862d-46ca-b4cd-73b975de19dd', 3),
+             ('db2863ea-369e-4262-ad17-bda986ae9632', 'f6d5268e-69d4-4cd0-b932-610341143548', 4);`,
 
 
 /* Denote the status of a specific aircraft */

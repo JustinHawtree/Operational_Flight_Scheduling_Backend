@@ -689,17 +689,17 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
                     `;
   
   const aircraftModelSQL = `SELECT AM.model_uuid, AM.model_name,
-                  json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid) ) as positions
-                  FROM aircraft_model AM
-                  INNER JOIN model_position MP
-                  ON AM.model_uuid = MP.model_uuid
-                  INNER JOIN crew_position CP
-                  ON MP.crew_position_uuid = CP.crew_position_uuid
-                  GROUP BY AM.model_uuid, AM.model_name `;
+                              ARRAY_AGG( JSON_BUILD_OBJECT('crew_position_uuid', CP.crew_position_uuid) ORDER BY MP.position_order ASC) as positions
+                              FROM aircraft_model AM
+                              INNER JOIN model_position MP
+                              ON AM.model_uuid = MP.model_uuid
+                              INNER JOIN crew_position CP
+                              ON MP.crew_position_uuid = CP.crew_position_uuid
+                              GROUP BY AM.model_uuid, AM.model_name`;
 
 
   const flightSQL = `SELECT FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description, all_day as "allDay",
-                        COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
+                        COALESCE (ARRAY_AGG( JSON_BUILD_OBJECT('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
                       FROM flight FT
                       LEFT OUTER JOIN flight_crew FC
                       ON FT.flight_uuid = FC.flight_uuid
@@ -713,12 +713,9 @@ app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
     client = await pool.connect();
 
     let promises = [];
-    promises.push(client.query(aircraftSQL));
-    promises.push(client.query(locationSQL));
-    promises.push(client.query(crewPositionSQL));
-    promises.push(client.query(airmenSQL));
-    promises.push(client.query(aircraftModelSQL));
-    promises.push(client.query(flightSQL, flightSQLValues));
+    promises.push(client.query(aircraftSQL), client.query(locationSQL));
+    promises.push(client.query(crewPositionSQL), client.query(airmenSQL));
+    promises.push(client.query(aircraftModelSQL), client.query(flightSQL, flightSQLValues));
 
     let responseHeaders = ["aircrafts", "locations", "crew_positions", "airmen", "aircraft_models", "flights"];
     let responsePayload = {};
