@@ -16,7 +16,7 @@ pool.on('error', (err, client) => {
 
 const preparedSQL = [
   `DROP TABLE IF EXISTS "model_position"`,
-  `DROP TABLE IF EXISTS "flight_pilot"`,
+  `DROP TABLE IF EXISTS "flight_crew"`,
   `DROP TABLE IF EXISTS "account";`,
   `DROP TABLE IF EXISTS "role";`,
   `DROP TABLE IF EXISTS "crew_position"`,
@@ -26,9 +26,10 @@ const preparedSQL = [
   `DROP TABLE IF EXISTS "rank";`,
   `DROP TABLE IF EXISTS "aircraft";`,
   `DROP TABLE IF EXISTS "aircraft_model";`,
-  'DROP TABLE IF EXISTS "aircraft_status"',
+  `DROP TABLE IF EXISTS "aircraft_status"`,
   `DROP TABLE IF EXISTS "airspace";`,
   `DROP TABLE IF EXISTS "location"`,
+  `DROP TABLE IF EXISTS "user_status"`,
   `DROP EXTENSION IF EXISTS "uuid-ossp";`
 ];
 

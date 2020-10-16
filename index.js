@@ -19,7 +19,7 @@ const jwtHttpOptions = {
 }
 
 app.use(cors({
-  origin: 'http://localhost:3000'
+  origin: ['http://localhost:3000', 'http://localhost:3001']
 }));
 
 
@@ -28,7 +28,8 @@ const { Pool } = require('pg');
 const pg = require('pg');
 
 // Needed for default type date in postgresql to utc, removing Z so javascript on the frontend can easily parse it.
-pg.types.setTypeParser(1114, str => moment.utc(str).format().replace("Z", ""));
+// This will only work once the index.js starts, so any timestamps in the makeTables.js still need to explicitly be UTC.
+pg.types.setTypeParser(1114, str => moment.utc(str).format());
 
 const pool = new Pool({
     user: process.env.PGUSER,
@@ -116,8 +117,14 @@ async function expectToken(req, res, next) {
     req.token = await decryptToken(req.headers.authorization);
     next();
   } catch (error) {
-    //console.log(error);
-    console.log(error.name, error.message)
+    let errorString = "Expected Token Error: ";
+    if (error.name || error.message) {
+      errorString += "Error Name:" + error.name+" ";
+      errorString += "Error Message:" + error.message;
+    } else {
+      errorString += error;
+    }
+    console.log(errorString);
     return res.status(400).send({error: 'Authentication Failure: Token Denied'});
   }
 }
@@ -151,13 +158,14 @@ function expectAdmin_Scheduler(req, res, next) {
 }
 
 
-
-
 function checkBody(body, params) {
   if (!body) return false;
   
   for (const param of params) {
-    if(!body[param]) return false;
+    if (typeof body[param] === 'undefined'|| body[param] === null) {
+      console.log("Body Error: Body is missing param:", param);
+      return false;
+    }
   }
   return true;
 }
@@ -169,7 +177,7 @@ function formatSetPatchSQL(validArray, body) {
   let setArray = ["SET "];
 
   for (let i = 0; i < validArray.length; i++) {
-    validObj[validArray[i]] = 1;
+    validObj[validArray[i]] = true;
   }
 
   let valuePos = 1;
@@ -185,8 +193,11 @@ function formatSetPatchSQL(validArray, body) {
   })
 
   let stringSet = setArray.join("").slice(0, -1);
-
-  return [stringSet, values]
+  if (values.length !== 0) {
+    return [stringSet, values];
+  } else {
+    return [null, []];
+  }
 }
 
 
@@ -205,10 +216,6 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use(bodyParser.json());
-
-
-
-
 
 
 
@@ -268,13 +275,13 @@ app.post('/login', async (req, res) => {
 app.post('/signup', async (req, res) => {
   let client; 
   try {
-    if (!checkBody(req.body, ['email', 'password', 'first_name', 'last_name', 'military_id'])){
+    if (!checkBody(req.body, ['email', 'password', 'first_name', 'last_name'])){
       console.log("Bad Body");
       return res.sendStatus(400);
     }
     let hashPassword = await getHash(req.body.password);
-    const SQL = "INSERT INTO account(email, password, first_name, last_name, military_id, accepted) VALUES($1, $2, $3, $4, $5, $6)";
-    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, req.body.military_id, false];
+    const SQL = "INSERT INTO account(email, password, first_name, last_name, accepted) VALUES($1, $2, $3, $4, $5)";
+    const values = [req.body.email, hashPassword, req.body.first_name, req.body.last_name, false];
     
     client = await pool.connect();
     let sqlResult = await client.query(SQL, values);
@@ -288,8 +295,6 @@ app.post('/signup', async (req, res) => {
     if (error.code === '23505') {
       if (error.constraint === 'account_email_key') {
         return res.status(400).send({error: "Email is already in use."});
-      } else if (error.constraint === 'account_military_id_key') {
-        return res.status(400).send({error: "Military id is already in use."});
       }
     }
     return res.sendStatus(500);
@@ -305,7 +310,7 @@ app.patch('/account', expectToken, expectAdmin, async (req, res) => {
   }
 
   let SQL = "UPDATE account ";
-  let [stringSet, values] = formatSetPatchSQL(["first_name","last_name","accepted", "rank_id", "pilot_status", "role"], req.body);
+  let [stringSet, values] = formatSetPatchSQL(["first_name","last_name","accepted", "rank_id", "pilot_status", "role", "status"], req.body);
   if (values.length <= 0) {
     console.log("Body didnt have any valid column names for", req.method, req.url);
     return res.sendStatus(400);
@@ -350,7 +355,7 @@ app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
 app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
-    const SQL = "SELECT account_uuid, military_id,  email, first_name, last_name FROM account WHERE accepted = false";
+    const SQL = "SELECT account_uuid, email, first_name, last_name FROM account WHERE accepted = false";
     client = await pool.connect();
     sqlResult = await client.query(SQL);
     client.release();
@@ -362,6 +367,21 @@ app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   return res.status(200).send({pilots: sqlResult.rows});
 });
 
+
+app.get('/users', expectToken, expectAdmin, async (req, res) => {
+  let client, sqlResult;
+  try {
+    const SQL = "SELECT account_uuid, first_name, last_name, rank_id, pilot_status, role, user_status FROM account WHERE role != 'Admin'";
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("Get users error:", error);
+    return res.sendStatus(500);
+  }
+  return res.status(200).send({pilots: sqlResult.rows});
+});
 
 
 app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
@@ -408,18 +428,6 @@ app.patch('/approve', expectToken, expectAdmin, async (req, res) => {
   }
   res.sendStatus(200);
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 app.post('/rank', expectToken, expectAdmin, async (req, res) => {
@@ -548,16 +556,6 @@ app.delete('/rank/:id', expectToken, expectAdmin, async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
-
-
 app.post('/aircraft_model', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['name'])){
     console.log("Bad Body");
@@ -596,13 +594,6 @@ app.get('/aircraft_model/:id', expectToken, expectAdmin_Scheduler, async (req, r
 });
 
 
-
-
-
-
-
-
-
 // TODO airplanes might need a id or serial number between other airplanes? I guess we can use table id for now
 app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
   if (!checkBody(req.body, ['model_id', 'status'])){
@@ -625,12 +616,16 @@ app.post('/aircraft', expectToken, expectAdmin, async (req, res) => {
 });
 
 
-
 app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
   const SQL = `SELECT aircraft_uuid as id, model_id, status FROM aircraft`;
-  const SQL2 = `SELECT AM.model_id, model_name, position, required
-                  FROM aircraft_model AM, crew_position CP, model_position MP
-                  WHERE AM.model_id = MP.model_id AND CP.crew_position_id = MP.crew_position_id`
+  const SQL2 = `SELECT AM.model_uuid, AM.model_name,
+                  json_agg( json_build_object('crew_position_uuid', CP.crew_position_uuid, 'position_name', CP.position, 'required', CP.required) ) as positions
+                  FROM aircraft_model AM
+                  INNER JOIN model_position MP
+                  ON AM.model_id = MP.model_id
+                  INNER JOIN crew_position CP
+                  ON MP.crew_position_id = CP.crew_position_id
+                  GROUP BY AM.model_uuid, AM.model_name `;
   let client, sqlResult, sql2Result;
   let modelArray = [];
   try {
@@ -638,35 +633,14 @@ app.get('/aircrafts', expectToken, expectAdmin_Scheduler, async (req, res) => {
     sqlResult = await client.query(SQL);
     sql2Result = await client.query(SQL2);
 
-    const findModelId = (id) => {
-      for (let i = 0; i < modelArray.length; i++) {
-        if (modelArray[i].model_id === id) {
-          return i;
-        }
-      }
-      return -1;
-    }
-    let objId;
-    for (let row of sql2Result.rows) {
-      if ((objId = findModelId(row.model_id)) === -1) {
-        modelArray.push({model_id: row.model_id, model_name: row.model_name,
-           positions: [{ position_name: row.position, required: row.required}] });
-      } else {
-        console.log("ObjId:", objId);
-        modelArray[objId].positions.push({ position_name: row.position, required: row.required});
-      }
-    }
     client.release();
   } catch (error) {
     if (client) client.release();
     console.log("Get airplane error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({aircraft_models: modelArray, aircrafts: sqlResult.rows,});
-})
-
-
-
+  return res.status(200).send({aircraft_models: sql2Result.rows, aircrafts: sqlResult.rows,});
+});
 
 
 app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
@@ -682,16 +656,96 @@ app.get('/locations', expectToken, expectAdmin_Scheduler, async (req, res) => {
     return res.sendStatus(500);
   }
   return res.status(200).send({locations: sqlResult.rows});
+});
+
+
+app.get('/essential', expectToken, expectAdmin_Scheduler, async (req, res) => {
+  console.log("Query?:", req.query);
+  if (!req.query.start || !req.query.end) {
+    console.log("Get Essential Error: did not have all required paramters");
+    return res.sendStatus(400);
+  }
+  if (isNaN(Date.parse(req.query.start)) || isNaN(Date.parse(req.query.end))) {
+    console.log("Get Essential Error: Query Parameters are not valid dates");
+    return res.sendStatus(400);
+  }
+
+  const aircraftSQL = `SELECT aircraft_uuid, model_uuid, status
+                        FROM aircraft
+                      `;
+  
+  const locationSQL = `SELECT location_uuid, location_name, track_num
+                        FROM location
+                      `;
+
+  const crewPositionSQL = `SELECT crew_position_uuid, position, required
+                            FROM crew_position`
+
+  const airmenSQL = `SELECT account_uuid, first_name, last_name, rank_name, pilot_status, user_status
+                      FROM account ACT
+                      INNER JOIN rank RK
+                      ON ACT.rank_uuid = RK.rank_uuid
+                      WHERE role = 'User'
+                    `;
+  
+  const aircraftModelSQL = `SELECT AM.model_uuid, AM.model_name,
+                              ARRAY_AGG( JSON_BUILD_OBJECT('crew_position_uuid', CP.crew_position_uuid) ORDER BY MP.position_order ASC) as positions
+                              FROM aircraft_model AM
+                              INNER JOIN model_position MP
+                              ON AM.model_uuid = MP.model_uuid
+                              INNER JOIN crew_position CP
+                              ON MP.crew_position_uuid = CP.crew_position_uuid
+                              GROUP BY AM.model_uuid, AM.model_name`;
+
+
+  const flightSQL = `SELECT FT.flight_uuid, location_uuid, FT.aircraft_uuid, start_time as start, end_time as end, color, title, description, all_day as "allDay",
+                        COALESCE (ARRAY_AGG( JSON_BUILD_OBJECT('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
+                      FROM flight FT
+                      LEFT OUTER JOIN flight_crew FC
+                      ON FT.flight_uuid = FC.flight_uuid
+                      WHERE FT.end_time > $1 OR FT.start_time < $2
+                      GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
+                        FT.title, FT.description, location_uuid, aircraft_uuid
+                    `;
+  const flightSQLValues = [req.query.start, req.query.end];
+  let client;
+  try {
+    client = await pool.connect();
+
+    let promises = [];
+    promises.push(client.query(aircraftSQL), client.query(locationSQL));
+    promises.push(client.query(crewPositionSQL), client.query(airmenSQL));
+    promises.push(client.query(aircraftModelSQL), client.query(flightSQL, flightSQLValues));
+
+    let responseHeaders = ["aircrafts", "locations", "crew_positions", "airmen", "aircraft_models", "flights"];
+    let responsePayload = {};
+
+    await Promise.all(promises).then((results) => {
+      results.forEach((response, index) => {
+        responsePayload[responseHeaders[index]] = response.rows;
+      })
+    })
+    client.release();
+    res.status(200).send(responsePayload);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Error:", error);
+    return res.sendStatus(500);
+  }
 })
 
 
-
 app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
-  const SQL = `SELECT flight_uuid, aircraft_uuid, location_uuid, start_time, 
-                  end_time, color, title, description 
-                FROM flight FT, aircraft AT, location LT
-                WHERE FT.aircraft_id = AT.aircraft_id AND FT.location_id = LT.location_id`;
+  const SQL = `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description, all_day as "allDay",
+                  COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid)) FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
+                FROM flight FT
+                LEFT OUTER JOIN flight_crew FC
+                ON FT.flight_uuid = FC.flight_uuid
+                GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
+                  FT.title, FT.description, location_uuid, aircraft_uuid
+                `;
   let client, sqlResult;
+  
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL);
@@ -701,5 +755,269 @@ app.get('/flights', expectToken, expectAdmin_Scheduler, async (req, res) => {
     console.log("Get Flights error", error);
     return res.sendStatus(500);
   }
-  return res.status(200).send({flights: sqlResult.rows});
-})
+  return res.status(200).send(
+    { 
+      flights: sqlResult.rows
+    }
+  );
+});
+
+
+app.post('/flight', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  if (!checkBody(req.body, ['aircraft_uuid', 'location_uuid', 'start_time', 
+      'end_time', 'color', 'title', 'description', 'all_day', 'crew_members'])) {
+    console.log("POST airplane bad body");
+    return res.sendStatus(400);
+  }
+
+  const SQL = `INSERT INTO flight (aircraft_uuid, location_uuid, start_time, end_time, color, title, description, all_day)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING flight_uuid`;
+  const values = [req.body.aircraft_uuid, req.body.location_uuid, req.body.start_time, req.body.end_time, req.body.color, req.body.title, req.body.description, req.body.all_day];
+  let sqlResult, client;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Post Flights Error:", error);
+    return res.sendStatus(500);
+  }
+
+  // Need to use this value to insert pilots
+  let flight_uuid = sqlResult.rows[0].flight_uuid;
+
+  // Insert all the associated pilots to the flight
+  if (req.body.crew_members && req.body.crew_members.length > 0) {
+    let insertArray = [];
+    let valuesArray = [];
+    let crewMembersInsertSQL = "INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES ";
+    insertArray.push(crewMembersInsertSQL);
+
+    let valuesIndex = 1;
+    for (const item of req.body.crew_members) {
+      insertArray.push("(");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ")");
+      insertArray.push(",");
+      valuesArray.push(flight_uuid, item.airman_uuid, item.crew_position_uuid);
+    };
+    insertArray.pop();
+    insertArray.push(";");
+    let sqlString = insertArray.join("");
+
+    try {
+      let sql2Result = await client.query(sqlString, valuesArray);
+      client.release();
+    } catch(error) {
+      if (client) client.release();
+      console.log("Post Flights Error:", error);
+      return res.sendStatus(500);
+    }
+
+
+  } else {
+    if (client) client.release();
+  }
+
+  return res.status(201).send(
+    {
+      flight_uuid: sqlResult.rows[0].flight_uuid
+    }
+  )
+});
+
+
+app.put('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+
+  let bodyArray = ['aircraft_uuid', 'location_uuid', 'start_time', 'end_time',
+  'color', 'title', 'description', 'all_day', 'crew_members'];
+  
+  if (!checkBody(req.body, bodyArray)) {
+    console.log("Put Flights Error: Bad Body");
+    return res.sendStatus(400);
+  }
+
+  // TODO: need to check to see if it does not exist in the table
+  //       if it does not exist in the table already then add it to the table and return
+  //       back the resulting flight_uuid
+
+  // Remove crew_members to just update flight table
+  bodyArray.pop();
+
+  let index = 1;
+  let updateArray =  [`UPDATE flight SET `];
+  let valuesArray = [];
+  for (const item of bodyArray) {
+    valuesArray.push(req.body[item]);
+    updateArray.push(`${item} = $${index++}`);
+    updateArray.push(', ');
+  }
+  updateArray.pop();
+  updateArray.push(`WHERE flight_uuid = $${index}`);
+  valuesArray.push(req.params.uuid);
+  let sqlUpdate = updateArray.join("");
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query(sqlUpdate, valuesArray);
+  } catch (error) {
+    if (client) client.release();
+    console.log("Put Flights Error:", error);
+    return res.sendStatus(500);
+  }
+
+  if (Array.isArray(req.body.crew_members)) {
+    let deleteSQL = "DELETE FROM flight_crew WHERE flight_uuid = $1";
+    try {
+      await client.query(deleteSQL, [req.params.uuid]);
+    } catch (error) {
+      if (client) client.release();
+      console.log("Put Flights Error - Deleting:", error);
+      return res.sendStatus(500);
+    }
+
+
+    let valuesArray = [];
+    let insertArray = ["INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES "];
+
+    let valuesIndex = 1;
+    for (const item of req.body.crew_members) {
+      insertArray.push("(");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ", ");
+      insertArray.push(`$${valuesIndex++}` + ")");
+      insertArray.push(",");
+      valuesArray.push(req.params.uuid, item.airman_uuid, item.crew_position_uuid);
+    };
+    insertArray.pop();
+    insertArray.push(";");
+    let sqlString = insertArray.join("");
+
+    try {
+      let sql2Result = await client.query(sqlString, valuesArray);
+      client.release();
+    } catch(error) {
+      if (client) client.release();
+      console.log("Post Flights Error - Insert Crews:", error);
+      return res.sendStatus(500);
+    }
+
+  } else {
+    console.log("Put Flights: Crew_Members array is malformed or not an array");
+    return res.sendStatus(400);
+  }
+
+  res.sendStatus(200);
+});
+
+
+app.patch('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+  let client;
+  let SQL = "UPDATE flight ";
+  let [stringSet, values] = formatSetPatchSQL(['aircraft_uuid', 'location_uuid', 'start_time', 'end_time',
+    'color', 'title', 'description', 'all_day'], req.body);
+  
+  if (values.length <= 0) {
+    if (!req.body.crew_members) {
+      console.log("Body didnt have any valid column names for:", req.method, req.url);
+      return res.sendStatus(400);
+    }
+  }
+  
+  if (values !== null && stringSet !== null) {
+    SQL += (stringSet + ` WHERE flight_uuid = $${values.length+1}`);
+    values.push(req.params.uuid);
+
+    let sqlResult;
+    try {
+      client = await pool.connect();
+      sqlResult = await client.query(SQL, values);
+      // client.release();
+    } catch (error) {
+      if (client) client.release();
+      console.log("Patch Flights Error:", error);
+      return res.sendStatus(500);
+    }
+  }
+
+  if (req.body.crew_members && Array.isArray(req.body.crew_members)) {
+    let deleteSQL = "DELETE FROM flight_crew WHERE flight_uuid = $1";
+    let deleteResult;
+    try {
+      if (!client) client = await pool.connect();
+      deleteResult = await client.query(deleteSQL, [req.params.uuid]);
+    } catch (error) {
+      if (client) client.release();
+      console.log("Patch Flights Error - Deleting:", error);
+      return res.sendStatus(500);
+    }
+
+    if (req.body.crew_members.length > 0) {
+      let insertArray = [];
+      let valuesArray = [];
+      let crewMembersInsertSQL = "INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES ";
+      insertArray.push(crewMembersInsertSQL);
+
+      let valuesIndex = 1;
+      for (const item of req.body.crew_members) {
+        insertArray.push("(");
+        insertArray.push(`$${valuesIndex++}` + ", ");
+        insertArray.push(`$${valuesIndex++}` + ", ");
+        insertArray.push(`$${valuesIndex++}` + ")");
+        insertArray.push(",");
+        valuesArray.push(req.params.uuid, item.airman_uuid, item.crew_position_uuid);
+      };
+      insertArray.pop();
+      insertArray.push(";");
+      let sqlString = insertArray.join("");
+
+      try {
+        let sql2Result = await client.query(sqlString, valuesArray);
+        client.release();
+      } catch(error) {
+        if (client) client.release();
+        console.log("Post Flights Error - Insert Crews:", error);
+        return res.sendStatus(500);
+      }
+    } else {
+      if (client) client.release();
+    }
+  } else {
+    if (client) client.release();
+  }
+
+  return res.sendStatus(200);
+});
+
+
+app.delete('/flight/:uuid', expectToken, expectAdmin_Scheduler, async(req, res) => {
+  // Make sure the parameter is a uuid
+  if (!validator.isUUID(req.params.uuid, 4)) {
+    return res.sendStatus(400);
+  }
+
+  let SQL = "DELETE FROM flight WHERE flight_uuid = $1";
+  let client, sqlResult;
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [req.params.uuid]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    console.log("DELETE Flights error", error);
+    return res.sendStatus(500);
+  }
+
+  return res.sendStatus(200);
+});
