@@ -335,7 +335,7 @@ app.patch('/account', expectToken, expectAdmin, async (req, res) => {
   return res.sendStatus(200);
 });
 
-
+// *
 app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
   let client, sqlResult;
   try {
@@ -351,7 +351,7 @@ app.get('/pilots', expectToken, expectAdmin_Scheduler, async (req, res) => {
   return res.status(200).send({pilots: sqlResult.rows});
 });
 
-
+// *
 app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
@@ -367,7 +367,7 @@ app.get('/approval', expectToken, expectAdmin, async (req, res) => {
   return res.status(200).send({pilots: sqlResult.rows});
 });
 
-
+// *
 app.get('/users', expectToken, expectAdmin, async (req, res) => {
   let client, sqlResult;
   try {
