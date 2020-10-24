@@ -1,7 +1,8 @@
-import { User } from "../models/user.interface";
+import { User, validUserUpdateProps } from "../models/user.interface";
 import { pool } from "./database.pool";
 import { compareHash, getHash } from "../util/bcrypt";
 import { setToken } from "../util/jwt";
+import { formatSetPatchSQL } from "../util/util";
 
 const baseUserData: string = "SELECT account_uuid, first_name, last_name, rank_uuid, pilot_status, role, user_status FROM account";
 
@@ -9,6 +10,24 @@ const makeUserObject = (account_uuid: string, email: string, first_name: string,
   rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
     return {account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status};
   }
+
+
+export const getUser = async (account_uuid: string): Promise<User> => {
+  let client: any = null;
+  let user: User;
+  const SQL: string = baseUserData + " WHERE account_uuid = $1";
+  let sqlResult: any = null;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [account_uuid]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Get User Error:"+error);
+  }
+  return sqlResult.rows[0];
+}
 
 
 export const getAllUsers = async (): Promise<Array<User>> => {
@@ -128,7 +147,7 @@ export const loginUser = async (email: string, password: string): Promise<Object
 }
 
 
-export const signupUser = async (email: string, password: string, first_name: string,
+export const signUpUser = async (email: string, password: string, first_name: string,
   last_name: string): Promise<Object> => {
     let client: any = null;
     let sqlResult: any = null;
@@ -137,7 +156,7 @@ export const signupUser = async (email: string, password: string, first_name: st
     })
 
     const SQL: string = "INSERT INTO account(email, password, first_name, last_name, accepted) VALUES($1, $2, $3, $4, $5)";
-    const values: Array<any> = [email, hashPassword, first_name, last_name];
+    const values: Array<any> = [email, hashPassword, first_name, last_name, false];
     
     try {
       client = await pool.connect();
@@ -152,5 +171,56 @@ export const signupUser = async (email: string, password: string, first_name: st
       }
       throw new Error("Signup Error from SQL Query error:"+error);
     }
-    return {};
+  return {};
+}
+
+
+export const updateUser = async (account_uuid: string, updateProps: any): Promise<Object> => {
+  if (!updateProps) {
+    return {error: "Update User was given a null or empty updateProps argument"};
+  }
+  let client: any = null;
+  let sqlResult: any = null;
+  let SQL: string = "UPDATE account ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetPatchSQL(validUserUpdateProps, updateProps);
+  
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for"};
+  }
+
+  SQL += (sqlSubSet + ` WHERE account_id = $${values.length+1}`);
+  console.log("SQL:", SQL);
+  values.push(account_uuid);
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Update User Error:"+error);
+  }
+  console.log("SQLResult for Update:", sqlResult);
+
+  return {};
+}
+
+
+export const replaceUser = async (account_uuid: string, user: User): Promise<Object> => {
+  let client: any = null;
+  let sqlResult: any = null;
+  const SQL: string = `UPDATE account SET first_name = $1, last_name = $2, accepted = $3, rank_uuid = $4, pilot_status = $5,
+                        role = $6, user_status = $7 WHERE account_uuid = $8`;
+  let values = [user.first_name, user.last_name, user.accepted, user.rank_uuid, user.pilot_status, user.role, user.user_status, account_uuid];
+  
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Replace User Error from SQL Query error:"+error);
+  }
+  return {};
 }
