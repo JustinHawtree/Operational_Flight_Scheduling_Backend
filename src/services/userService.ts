@@ -148,7 +148,7 @@ export const loginUser = async (email: string, password: string): Promise<Object
 
 
 export const signUpUser = async (email: string, password: string, first_name: string,
-  last_name: string): Promise<Object> => {
+  last_name: string): Promise<{ error: any }> => {
     let client: any = null;
     let sqlResult: any = null;
     let hashPassword: string = await getHash(password).catch((error) => {
@@ -171,11 +171,11 @@ export const signUpUser = async (email: string, password: string, first_name: st
       }
       throw new Error("Signup Error from SQL Query error:"+error);
     }
-  return {};
+  return {error: false};
 }
 
 
-export const updateUser = async (account_uuid: string, updateProps: any): Promise<Object> => {
+export const updateUser = async (account_uuid: string, updateProps: any): Promise< { error: any } > => {
   if (!updateProps) {
     return {error: "Update User was given a null or empty updateProps argument"};
   }
@@ -189,7 +189,7 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
     return {error: "Body didnt have any valid column names for"};
   }
 
-  SQL += (sqlSubSet + ` WHERE account_id = $${values.length+1}`);
+  SQL += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
   console.log("SQL:", SQL);
   values.push(account_uuid);
 
@@ -201,13 +201,15 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
     if (client) client.release();
     throw new Error("Update User Error:"+error);
   }
-  console.log("SQLResult for Update:", sqlResult);
-
-  return {};
+  
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row updated"};
+  }
+  return { error: false };
 }
 
 
-export const replaceUser = async (account_uuid: string, user: User): Promise<Object> => {
+export const replaceUser = async (account_uuid: string, user: User): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
   const SQL: string = `UPDATE account SET first_name = $1, last_name = $2, accepted = $3, rank_uuid = $4, pilot_status = $5,
@@ -222,5 +224,11 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<Obj
     if (client) client.release();
     throw new Error("Replace User Error from SQL Query error:"+error);
   }
-  return {};
+  console.log("SQLResult for replace:", sqlResult);
+
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row updated"};
+  }
+
+  return {error: false};
 }

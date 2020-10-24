@@ -33,9 +33,9 @@ export const setToken = (obj: Object): Promise<object> => {
 }
 
 
-export const decryptToken = (token: any): Promise<any> =>{
+export const decryptToken = (token: any): Promise<any> => {
   return new Promise ((resolve, reject) => {
-    if (!token) reject("JWT Error: no token provided to decryptToken()");
+    if (!token) reject("JWT Error: no valid token provided to decryptToken()");
     jwt.verify(token.replace("Bearer ", ""), publicKey, jwtHttpOptions, (error: any, value: any) => {
       if (error) {
         reject(error);
@@ -44,4 +44,22 @@ export const decryptToken = (token: any): Promise<any> =>{
       }
     })
   })
+}
+
+
+export const validateTokenAndRole = (token: any, roles: Array<any>): Promise<{ error: any }> => {
+  return new Promise(async (resolve, reject) => {
+    if (!token) reject({ error: "No valid token provided" });
+    try {
+      let payload = await decryptToken(token);
+
+      if (roles.indexOf(payload.role) < 0) {
+        reject({ error: "User is not authorized for specified role" })
+      }
+      resolve({error: false});
+
+    } catch (error) {
+      reject({ error });
+    }
+  });
 }
