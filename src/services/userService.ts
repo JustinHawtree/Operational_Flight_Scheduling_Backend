@@ -1,10 +1,9 @@
-import { User, validUserUpdateProps } from "../models/user.interface";
+import { User, validUserUpdateProps, baseUserData } from "../models/userInterface";
 import { pool } from "./database.pool";
 import { compareHash, getHash } from "../util/bcrypt";
 import { setToken } from "../util/jwt";
 import { formatSetPatchSQL } from "../util/util";
 
-const baseUserData: string = "SELECT account_uuid, first_name, last_name, rank_uuid, pilot_status, role, user_status FROM account";
 
 const makeUserObject = (account_uuid: string, email: string, first_name: string, last_name: string, accepted: boolean,
   rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
@@ -14,7 +13,6 @@ const makeUserObject = (account_uuid: string, email: string, first_name: string,
 
 export const getUser = async (account_uuid: string): Promise<User> => {
   let client: any = null;
-  let user: User;
   const SQL: string = baseUserData + " WHERE account_uuid = $1";
   let sqlResult: any = null;
 
@@ -24,7 +22,7 @@ export const getUser = async (account_uuid: string): Promise<User> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get User Error:"+error);
+    throw new Error("Get User Error: "+error);
   }
   return sqlResult.rows[0];
 }
@@ -42,7 +40,7 @@ export const getAllUsers = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get All Users Error:"+error);
+    throw new Error("Get All Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -65,7 +63,7 @@ export const getNonApprovedUsers = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get Non Approved Users Error:"+error);
+    throw new Error("Get Non Approved Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -88,7 +86,7 @@ export const getPilots = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get Pilots Users Error:"+error);
+    throw new Error("Get Pilots Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -132,7 +130,7 @@ export const loginUser = async (email: string, password: string): Promise<Object
   }
 
   let tokenResult: any = await setToken({ email, role: sqlResult.rows[0].role }).catch((error) =>{
-    throw new Error("JWT ERROR: loginUser setToken() error"+error);
+    throw new Error("JWT ERROR: loginUser setToken() error: "+error);
   });
 
   
@@ -169,7 +167,7 @@ export const signUpUser = async (email: string, password: string, first_name: st
           return {error: "Email is already in use."};
         }
       }
-      throw new Error("Signup Error from SQL Query error:"+error);
+      throw new Error("Signup Error from SQL Query error :"+error);
     }
   return {error: false};
 }
@@ -186,7 +184,7 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
   [sqlSubSet, values] = formatSetPatchSQL(validUserUpdateProps, updateProps);
   
   if (values.length <= 0) {
-    return {error: "Body didnt have any valid column names for"};
+    return {error: "Body didnt have any valid column names for User"};
   }
 
   SQL += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
@@ -199,7 +197,7 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Update User Error:"+error);
+    throw new Error("Update User Error :"+error);
   }
   
   if (sqlResult.rowCount <= 0) {
@@ -222,7 +220,7 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<{ e
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Replace User Error from SQL Query error:"+error);
+    throw new Error("Replace User Error from SQL Query error :"+error);
   }
   console.log("SQLResult for replace:", sqlResult);
 
