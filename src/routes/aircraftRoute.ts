@@ -12,7 +12,7 @@ router.get("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.getOneBy
 router.get("/", [checkJwt, checkRole(["Admin"])], aircraftController.getAllAircrafts);
 
 // Create an aircraft
-// router.post("/")
+router.post("/", [checkJwt, checkRole(["Admin"])], aircraftController.createAircraft);
 
 // Replace an aircraft
 router.put("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.replaceAircraft);

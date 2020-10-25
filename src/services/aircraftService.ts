@@ -37,6 +37,25 @@ export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
 }
 
 
+export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, uuid: string }> => {
+  let client: any = null;
+  const SQL: string = `INSERT INTO aicraft (model_uuid, status) VALUES ($1, $2) RETURNING aircraft_uuid`;
+  let sqlResult: any = null;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [aircraft.model_uuid, aircraft.aircraft_status]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Create Aircraft Error :"+error);
+  }
+  console.log("SQLResult for Creating Aircraft:", sqlResult);
+
+  return {error: false, uuid: sqlResult.rows[0].aircraft_uuid}
+}
+
+
 export const updateAircraft = async (aircraft_uuid: string, updateProps: any): Promise< { error: any } > => {
   if (!updateProps) {
     return {error: "Update Aircraft was given a null or empty updateProps argument"};

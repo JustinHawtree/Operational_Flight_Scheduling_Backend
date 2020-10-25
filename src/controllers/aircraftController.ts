@@ -20,13 +20,32 @@ export default class UserController {
   };
 
 
-  static getAllAircrafts =  async(req: Request, res: Response): Promise<Response> => {
+  static getAllAircrafts = async(req: Request, res: Response): Promise<Response> => {
     try {
       const aircrafts: Array<Aircraft> = await AircraftService.getAllAircrafts();
       return res.status(200).send({ aircrafts });
     } catch (error) {
       console.error(error.message);
       return res.sendStatus(500);
+    }
+  }
+
+
+  static createAircraft = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const aircraft: Aircraft = req.body;
+      let result = await AircraftService.createAircraft(aircraft);
+
+      if (result.error) {
+        console.error("Create Aicraft Error:", result.error);
+        return res.sendStatus(400);
+      }
+
+      return res.status(200).send({aircraft_uuid: result.uuid});
+
+    } catch (error) {
+      console.error("Delete Aircraft Error:", error.message);
+      return res.sendStatus(400);
     }
   }
 
@@ -41,7 +60,7 @@ export default class UserController {
       let result = await AircraftService.replaceAircraft(req.params.id, aircraft);
 
       if (result.error) {
-        console.error("Path Update Put Aircraft Error:", result.error);
+        console.error("Update Put Aircraft Error:", result.error);
         return res.sendStatus(400);
       }
 
