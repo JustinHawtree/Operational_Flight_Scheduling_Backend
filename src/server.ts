@@ -3,9 +3,9 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require('cors');
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
-import { UserRouter } from "./controllers/user.controller";
+import routes from "./routes";
 
 app.use(bodyParser.urlencoded({
   extended: true
@@ -16,7 +16,7 @@ app.use(cors({
 }))
 
 
-app.use("/", UserRouter);
+app.use("/", routes);
 
 app.listen(PORT, (err: any) => {
   if (err) {

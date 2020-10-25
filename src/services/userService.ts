@@ -1,14 +1,31 @@
-import { User } from "../models/user.interface";
+import { User, validUserUpdateProps, baseUserData } from "../models/userInterface";
 import { pool } from "./database.pool";
 import { compareHash, getHash } from "../util/bcrypt";
 import { setToken } from "../util/jwt";
+import { formatSetPatchSQL } from "../util/util";
 
-const baseUserData: string = "SELECT account_uuid, first_name, last_name, rank_uuid, pilot_status, role, user_status FROM account";
 
 const makeUserObject = (account_uuid: string, email: string, first_name: string, last_name: string, accepted: boolean,
   rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
     return {account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status};
   }
+
+
+export const getUser = async (account_uuid: string): Promise<User> => {
+  let client: any = null;
+  const SQL: string = baseUserData + " WHERE account_uuid = $1";
+  let sqlResult: any = null;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [account_uuid]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Get User Error: "+error);
+  }
+  return sqlResult.rows[0];
+}
 
 
 export const getAllUsers = async (): Promise<Array<User>> => {
@@ -23,7 +40,7 @@ export const getAllUsers = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get All Users Error:"+error);
+    throw new Error("Get All Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -46,7 +63,7 @@ export const getNonApprovedUsers = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get Non Approved Users Error:"+error);
+    throw new Error("Get Non Approved Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -69,7 +86,7 @@ export const getPilots = async (): Promise<Array<User>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get Pilots Users Error:"+error);
+    throw new Error("Get Pilots Users Error: "+error);
   }
 
   userList = sqlResult.rows.map((user: any) => 
@@ -113,7 +130,7 @@ export const loginUser = async (email: string, password: string): Promise<Object
   }
 
   let tokenResult: any = await setToken({ email, role: sqlResult.rows[0].role }).catch((error) =>{
-    throw new Error("JWT ERROR: loginUser setToken() error"+error);
+    throw new Error("JWT ERROR: loginUser setToken() error: "+error);
   });
 
   
@@ -128,8 +145,8 @@ export const loginUser = async (email: string, password: string): Promise<Object
 }
 
 
-export const signupUser = async (email: string, password: string, first_name: string,
-  last_name: string): Promise<Object> => {
+export const signUpUser = async (email: string, password: string, first_name: string,
+  last_name: string): Promise<{ error: any }> => {
     let client: any = null;
     let sqlResult: any = null;
     let hashPassword: string = await getHash(password).catch((error) => {
@@ -137,7 +154,7 @@ export const signupUser = async (email: string, password: string, first_name: st
     })
 
     const SQL: string = "INSERT INTO account(email, password, first_name, last_name, accepted) VALUES($1, $2, $3, $4, $5)";
-    const values: Array<any> = [email, hashPassword, first_name, last_name];
+    const values: Array<any> = [email, hashPassword, first_name, last_name, false];
     
     try {
       client = await pool.connect();
@@ -150,7 +167,66 @@ export const signupUser = async (email: string, password: string, first_name: st
           return {error: "Email is already in use."};
         }
       }
-      throw new Error("Signup Error from SQL Query error:"+error);
+      throw new Error("Signup Error from SQL Query error :"+error);
     }
-    return {};
+  return {error: false};
+}
+
+
+export const updateUser = async (account_uuid: string, updateProps: any): Promise< { error: any } > => {
+  if (!updateProps) {
+    return {error: "Update User was given a null or empty updateProps argument"};
+  }
+  let client: any = null;
+  let sqlResult: any = null;
+  let SQL: string = "UPDATE account ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetPatchSQL(validUserUpdateProps, updateProps);
+  
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for User"};
+  }
+
+  SQL += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
+  console.log("SQL:", SQL);
+  values.push(account_uuid);
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Update User Error :"+error);
+  }
+  
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row updated"};
+  }
+  return { error: false };
+}
+
+
+export const replaceUser = async (account_uuid: string, user: User): Promise<{ error: any }> => {
+  let client: any = null;
+  let sqlResult: any = null;
+  const SQL: string = `UPDATE account SET first_name = $1, last_name = $2, accepted = $3, rank_uuid = $4, pilot_status = $5,
+                        role = $6, user_status = $7 WHERE account_uuid = $8`;
+  let values = [user.first_name, user.last_name, user.accepted, user.rank_uuid, user.pilot_status, user.role, user.user_status, account_uuid];
+  
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, values);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Replace User Error from SQL Query error :"+error);
+  }
+  console.log("SQLResult for replace:", sqlResult);
+
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row updated"};
+  }
+
+  return {error: false};
 }

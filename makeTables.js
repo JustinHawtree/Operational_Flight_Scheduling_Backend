@@ -13,7 +13,7 @@ const pool = new Pool({
 // TODO:
   // Create another table that links users to a universal crew position "rank"
   // Create another table that links universal ranks to crew_positions
-  // Aircrafts need an generated id like  MY 12-3456
+  // Aircrafts need an generated id like  MY 12-3456 (ICAO)
     // First 2 Letters represent the Aircraft Base Code
     // First 2 Numbers represent the year of order for that aircraft
     // Last 4 Numbers is in serial from that ordered year of aircrafts 
@@ -158,6 +158,17 @@ const preparedSQL = [
              ('0ddfcd5e-54e8-4571-8fdf-3630fd484f6c', 'Combat System Officer', TRUE),
              ('1785b149-862d-46ca-b4cd-73b975de19dd', 'Flight Engineer', TRUE),
              ('f6d5268e-69d4-4cd0-b932-610341143548', 'Gunner', TRUE);`,
+
+  `CREATE TABLE meta_position (
+      meta_position_uuid UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
+      meta_name VARCHAR(30) NOT NULL,
+      crew_position_uuid UUID,
+      PRIMARY KEY (meta_position_uuid),
+      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
+  )`,
+
+  `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
+      VALUES ()`
 
   `CREATE TABLE model_position (
       model_position_uuid UUID DEFAULT uuid_generate_v4(),
