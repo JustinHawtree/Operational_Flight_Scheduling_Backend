@@ -17,7 +17,7 @@ export const formatSetPatchSQL = (validArray: Array<any>, dataObj: any): [string
       // appends the value from the user to the values array
       values.push(dataObj[bodyProp]);
     }
-  })
+  });
 
   patchString = patchString.slice(0, -1);
   if (values.length !== 0) {
