@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import validator from 'validator';
-import * as UserService from "../services/userService";
+import * as AuthService from "../services/authService";
 
 
 export default class AuthController {
@@ -16,7 +16,7 @@ export default class AuthController {
       if (!req.body.password) {
         return res.sendStatus(400);
       }
-      let loginObj = await UserService.loginUser(req.body.email, req.body.password);
+      let loginObj = await AuthService.loginUser(req.body.email, req.body.password);
       return res.status(200).send(loginObj);
     } catch (error) {
       console.error("Login Error: User", req.body.email, "tried to log in, with Error:", error.message);
@@ -41,7 +41,7 @@ export default class AuthController {
         return res.sendStatus(400);
       }
 
-      let signupObject: any = await UserService.signUpUser(req.body.email, req.body.password, req.body.first_name, req.body.last_name);
+      let signupObject: any = await AuthService.signUpUser(req.body.email, req.body.password, req.body.first_name, req.body.last_name);
       
       if (signupObject.error) {
         return res.status(400).send({error: signupObject.error});

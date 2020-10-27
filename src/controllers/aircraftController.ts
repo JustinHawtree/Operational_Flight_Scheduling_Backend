@@ -41,7 +41,7 @@ export default class UserController {
         return res.sendStatus(400);
       }
 
-      return res.status(200).send({aircraft_uuid: result.uuid});
+      return res.status(200).send({aircraft_uuid: result.newAircraftUUID});
 
     } catch (error) {
       console.error("Delete Aircraft Error:", error.message);

@@ -20,7 +20,7 @@ export default class UserController {
   };
 
 
-  static getAllUsers =  async(req: Request, res: Response): Promise<Response> => {
+  static getAllUsers =  async(_: any, res: Response): Promise<Response> => {
     try {
       const users: Array<User> = await UserService.getAllUsers();
       return res.status(200).send({ users });
@@ -31,7 +31,7 @@ export default class UserController {
   }
 
 
-  static getNonApprovedUsers =  async(req: Request, res: Response): Promise<Response> => {
+  static getNonApprovedUsers =  async(_: any, res: Response): Promise<Response> => {
     try {
       const users: Array<User> = await UserService.getNonApprovedUsers();
       return res.status(200).send({ users });
@@ -42,7 +42,7 @@ export default class UserController {
   };
 
 
-  static getPilots = async(req: Request, res: Response): Promise<Response> => {
+  static getPilots = async(_: any, res: Response): Promise<Response> => {
     try {
       const users: Array<User> = await UserService.getPilots();
       return res.status(200).send({ users });
@@ -84,7 +84,7 @@ export default class UserController {
 
       let result = await UserService.updateUser(req.params.id, req.body);
       if (result.error) {
-        console.error("Path Update Patch User Error:", result.error);
+        console.error("Edit User Error:", result.error);
         return res.sendStatus(400);
       }
 
@@ -95,4 +95,25 @@ export default class UserController {
       return res.sendStatus(500);
     }
   };
+
+
+  static approveUser = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.body.approve) {
+        return res.sendStatus(400);
+      }
+
+      let result = await UserService.approveUsers(req.body.approve);
+      if (result.error) {
+        console.error("Approve Users Service Error", result.error);
+        return res.sendStatus(400);
+      }
+
+      return res.sendStatus(200);
+    
+    } catch (error) {
+      console.error("Approve Users Service Error", error.message);
+      return res.sendStatus(500);
+    }
+  }
 }

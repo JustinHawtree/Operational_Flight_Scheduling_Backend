@@ -37,7 +37,7 @@ export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
 }
 
 
-export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, uuid: string }> => {
+export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, newAircraftUUID: string }> => {
   let client: any = null;
   const SQL: string = `INSERT INTO aicraft (model_uuid, status) VALUES ($1, $2) RETURNING aircraft_uuid`;
   let sqlResult: any = null;
@@ -52,7 +52,7 @@ export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, 
   }
   console.log("SQLResult for Creating Aircraft:", sqlResult);
 
-  return {error: false, uuid: sqlResult.rows[0].aircraft_uuid}
+  return {error: false, newAircraftUUID: sqlResult.rows[0].aircraft_uuid}
 }
 
 
@@ -93,7 +93,7 @@ export const updateAircraft = async (aircraft_uuid: string, updateProps: any): P
 export const replaceAircraft = async (aircraft_uuid: string, aircraft: Aircraft): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
-  const SQL: string = `UPDATE aircraft SET status = $1 WHERE aircraft_uuid = $8`;
+  const SQL: string = `UPDATE aircraft SET status = $1 WHERE aircraft_uuid = $2`;
   let values = [aircraft.aircraft_status, aircraft_uuid];
   
   try {
