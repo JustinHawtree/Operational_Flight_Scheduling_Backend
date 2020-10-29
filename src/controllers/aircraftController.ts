@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as AircraftService from "../services/aircraftService";
-import { Aircraft } from "../models/aircraftInterface";
+import Aircraft from "../models/aircraftInterface";
 
 export default class UserController {
 
