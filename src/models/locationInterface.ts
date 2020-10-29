@@ -1,4 +1,4 @@
-export interface Location {
+export default interface Location {
   location_uuid: string;
   location_name: string;
   track_num: number;

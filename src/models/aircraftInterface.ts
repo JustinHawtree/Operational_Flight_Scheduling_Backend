@@ -1,4 +1,4 @@
-export interface Aircraft {
+export default interface Aircraft {
   aircraft_uuid: string;
   model_uuid: string;
   aircraft_status: string;

@@ -1,4 +1,4 @@
-import { User, validUserUpdateProps, baseUserData } from "../models/userInterface";
+import User, { validUserUpdateProps, baseUserData } from "../models/userInterface";
 import { pool } from "./database.pool";
 import { formatSetPatchSQL } from "../util/util";
 import validator from "validator";
