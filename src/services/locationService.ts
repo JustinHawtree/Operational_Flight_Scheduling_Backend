@@ -1,6 +1,6 @@
 import { pool } from "./database.pool";
 import { formatSetPatchSQL } from "../util/util";
-import { Location, baseLocationData, validLocationUpdateProps } from "../models/locationInterface";
+import Location, { baseLocationData, validLocationUpdateProps } from "../models/locationInterface";
 
 
 export const getLocation = async (location_uuid: string): Promise<Location> => {
@@ -44,7 +44,7 @@ export const createLocation = async (location: Location): Promise<{ error: any, 
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, [location.location_uuid, location.track_num]);
+    sqlResult = await client.query(SQL, [location.location_name, location.track_num]);
     client.release();
   } catch (error) {
     if (client) client.release();

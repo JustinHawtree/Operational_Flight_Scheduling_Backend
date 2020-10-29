@@ -1,3 +1,3 @@
-export interface Pilot_Status {
+export default interface Pilot_Status {
   status: string;
 }

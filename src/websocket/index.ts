@@ -1,4 +1,4 @@
-import { userHandler } from "./handlers/userHandler";
+import locationHandler from "./handlers/locationHandler";
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -28,14 +28,16 @@ require('uWebSockets.js').App().ws('/*', {
 
       switch (topic) {
         case "user":
-          userHandler(action, message, (error: any, response: any) => {
-            if (error) {
-              ws.send('error', error);
-              return;
-            }
-            ws.publish('user', response);
-          });
+          // userHandler(action, message, (error: any, response: any) => {
+          //   if (error) {
+          //     ws.send('error', error);
+          //     return;
+          //   }
+          //   ws.publish('user', response);
+          // });
           break;
+
+
         case "flight_crew":
           switch (action) {
             case "add":
@@ -53,6 +55,8 @@ require('uWebSockets.js').App().ws('/*', {
           }
           ws.publish('flight_crew', message);
           break;
+
+
         case "flight":
           switch (action) {
             case "add":
@@ -70,23 +74,19 @@ require('uWebSockets.js').App().ws('/*', {
           }
           ws.publish('flight', message);
           break;
+
+
         case "location":
-          switch (action) {
-            case "add":
-              console.log("this is addding case!");
-              break;
-            case "edit":
-              console.log("this is editing case!");
-              break;
-            case "delete":
-              console.log("this is deleting case!");
-              break;
-            default:
-              console.log("not a valid action");
-              break;
-          }
-          ws.publish('location', message);
+          locationHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('location', response);
+          });
           break;
+
+
         case "crew_position":
           switch (action) {
             case "add":
@@ -104,6 +104,8 @@ require('uWebSockets.js').App().ws('/*', {
           }
           ws.publish('crew_position', message);
           break;
+
+
         case "aircraft":
           switch (action) {
             case "add":

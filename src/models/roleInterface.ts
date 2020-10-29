@@ -1,3 +1,3 @@
-export interface Role {
+export default interface Role {
   role_name: string;
 }

@@ -1,4 +1,4 @@
-import { Aircraft, validAircraftUpdateProps, baseAircraftData } from "../models/aircraftInterface";
+import Aircraft, { validAircraftUpdateProps, baseAircraftData } from "../models/aircraftInterface";
 import { pool } from "./database.pool";
 import { formatSetPatchSQL } from "../util/util";
 
