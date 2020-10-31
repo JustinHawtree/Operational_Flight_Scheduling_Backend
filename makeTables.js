@@ -208,6 +208,7 @@ const preparedSQL = [
   `CREATE TABLE aircraft (
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
+      tail_code VARCHAR(7) NOT NULL,
       status VARCHAR(20) NOT NULL DEFAULT 'Available',
       PRIMARY KEY (aircraft_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
@@ -215,10 +216,10 @@ const preparedSQL = [
   );`,
 
 
-  `INSERT INTO aircraft (aircraft_uuid, model_uuid, status)
-      VALUES ('63c6821a-fb98-418b-9336-c60beb837708', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'Available'),
-             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'db2863ea-369e-4262-ad17-bda986ae9632', 'Available'),
-             ('475eb3d2-5b9a-4efc-8a09-96849a136b00', 'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'Available');`,
+  `INSERT INTO aircraft (aircraft_uuid, model_uuid, tail_code, status)
+      VALUES ('63c6821a-fb98-418b-9336-c60beb837708', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'MY89112', 'Available'),
+             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'db2863ea-369e-4262-ad17-bda986ae9632', 'MY92342', 'Available'),
+             ('475eb3d2-5b9a-4efc-8a09-96849a136b00', 'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'MY96232', 'Available');`,
 
 
 
@@ -246,7 +247,7 @@ const preparedSQL = [
       color VARCHAR(30) NOT NULL,
       title VARCHAR(50) NOT NULL,
       description VARCHAR(200),
-      all_day BOOLEAN NOT NULL DEFAULT FALSE,
+      allDay BOOLEAN NOT NULL DEFAULT FALSE,
       PRIMARY KEY (flight_uuid),
       FOREIGN KEY (aircraft_uuid) REFERENCES aircraft (aircraft_uuid),
       FOREIGN KEY (location_uuid) REFERENCES location (location_uuid)

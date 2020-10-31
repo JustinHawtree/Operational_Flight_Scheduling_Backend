@@ -39,12 +39,20 @@ export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
 
 export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, newAircraftUUID: string }> => {
   let client: any = null;
-  const SQL: string = `INSERT INTO aircraft (model_uuid) VALUES ($1) RETURNING aircraft_uuid`;
+  let values: Array<any> = [];
+  let sql: string;
+  if (aircraft.status) {
+    sql = `INSERT INTO aircraft (model_uuid, status, tail_code) VALUES ($1, $2, $3) RETURNING aircraft_uuid`;
+    values.push(aircraft.model_uuid, aircraft.status, aircraft.tail_code)
+  } else {
+    sql = `INSERT INTO aircraft (model_uuid, tail_code) VALUES ($1, $2) RETURNING aircraft_uuid`;
+    values.push(aircraft.model_uuid, aircraft.tail_code);
+  }
   let sqlResult: any = null;
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, [aircraft.model_uuid]);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
