@@ -167,8 +167,8 @@ const preparedSQL = [
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   )`,
 
-  `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
-      VALUES ()`
+//   `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
+//       VALUES ()`,
 
   `CREATE TABLE model_position (
       model_position_uuid UUID DEFAULT uuid_generate_v4(),
@@ -208,7 +208,7 @@ const preparedSQL = [
   `CREATE TABLE aircraft (
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
-      status VARCHAR(20),
+      status VARCHAR(20) NOT NULL DEFAULT 'Available',
       PRIMARY KEY (aircraft_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (status) REFERENCES aircraft_status (status)

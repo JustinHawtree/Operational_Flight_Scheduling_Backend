@@ -1,26 +1,26 @@
 import { Router } from "express";
-import aircraftController from "../controllers/aircraftController";
+import AircraftController from "../controllers/aircraftController";
 import { checkJwt } from "../middlewares/checkJwt";
 import { checkRole } from "../middlewares/checkRole";
 
 const router = Router();
 
 // Get one aircraft
-router.get("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.getOneById);
+router.get("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.getOneByUUID);
 
 // Get all aircrafts
-router.get("/", [checkJwt, checkRole(["Admin"])], aircraftController.getAllAircrafts);
+router.get("/", [checkJwt, checkRole(["Admin"])], AircraftController.getAllAircrafts);
 
 // Create an aircraft
-router.post("/", [checkJwt, checkRole(["Admin"])], aircraftController.createAircraft);
+router.post("/", [checkJwt, checkRole(["Admin"])], AircraftController.createAircraft);
 
 // Replace an aircraft
-router.put("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.replaceAircraft);
+router.put("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.replaceAircraft);
 
 // Edit an aircraft
-router.patch("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.editAircraft);
+router.patch("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.editAircraft);
 
 // Delete an aircrft
-router.delete("/:id", [checkJwt, checkRole(["Admin"])], aircraftController.removeAircraft);
+router.delete("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.removeAircraft);
 
 export default router;

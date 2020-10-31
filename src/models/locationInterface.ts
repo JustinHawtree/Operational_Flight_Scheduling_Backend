@@ -6,4 +6,4 @@ export default interface Location {
 
 export const validLocationUpdateProps: Array<string> = ["location_name", "track_num"];
 
-export const baseLocationData: string = "SELECT location_uuid, location_name, track_num FROM location";
+export const baseLocationData: string = "SELECT location_uuid, location_name, track_num FROM location ";

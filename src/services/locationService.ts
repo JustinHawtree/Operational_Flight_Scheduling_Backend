@@ -5,7 +5,7 @@ import Location, { baseLocationData, validLocationUpdateProps } from "../models/
 
 export const getLocation = async (location_uuid: string): Promise<Location> => {
   let client: any = null;
-  const SQL: string = baseLocationData + " WHERE location_uuid = $1";
+  const SQL: string = baseLocationData + "WHERE location_uuid = $1";
   let sqlResult: any = null;
 
   try {
@@ -121,7 +121,7 @@ export const removeLocation = async (location_uuid: string): Promise<{ error: an
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, location_uuid);
+    sqlResult = await client.query(SQL, [location_uuid]);
     client.release();
   } catch (error) {
     if (client) client.release();

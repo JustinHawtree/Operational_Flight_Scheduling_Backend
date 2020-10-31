@@ -6,13 +6,13 @@ import validator from "validator";
 
 const makeUserObject = (account_uuid: string, email: string, first_name: string, last_name: string, accepted: boolean,
   rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
-    return {account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status};
+    return { account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status };
   }
 
 
 export const getUser = async (account_uuid: string): Promise<User> => {
   let client: any = null;
-  const SQL: string = baseUserData + " WHERE account_uuid = $1";
+  const SQL: string = baseUserData + "WHERE account_uuid = $1";
   let sqlResult: any = null;
 
   try {
@@ -30,7 +30,7 @@ export const getUser = async (account_uuid: string): Promise<User> => {
 export const getAllUsers = async (): Promise<Array<User>> => {
   let client: any = null;
   let userList: Array<User>;
-  const SQL: string = baseUserData + " WHERE role != 'Admin'";
+  const SQL: string = baseUserData + "WHERE role != 'Admin'";
   let sqlResult: any = null;
   
   try {

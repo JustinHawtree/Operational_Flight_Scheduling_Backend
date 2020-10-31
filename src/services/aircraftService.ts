@@ -5,7 +5,7 @@ import { formatSetPatchSQL } from "../util/util";
 
 export const getAircraft = async (aircraft_uuid: string): Promise<Aircraft> => {
   let client: any = null;
-  const SQL: string = baseAircraftData + " WHERE aircraft_uuid = $1";
+  const SQL: string = baseAircraftData + "WHERE aircraft_uuid = $1";
   let sqlResult: any = null;
 
   try {
@@ -14,7 +14,7 @@ export const getAircraft = async (aircraft_uuid: string): Promise<Aircraft> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get Aircraft Error :"+error);
+    throw new Error("Get Aircraft Error: "+error);
   }
   return sqlResult.rows[0];
 }
@@ -31,7 +31,7 @@ export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Get All Aircrafts Error :"+error);
+    throw new Error("Get All Aircrafts Error: "+error);
   }
   return sqlResult.rows;
 }
@@ -39,12 +39,12 @@ export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
 
 export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, newAircraftUUID: string }> => {
   let client: any = null;
-  const SQL: string = `INSERT INTO aicraft (model_uuid, status) VALUES ($1, $2) RETURNING aircraft_uuid`;
+  const SQL: string = `INSERT INTO aircraft (model_uuid) VALUES ($1) RETURNING aircraft_uuid`;
   let sqlResult: any = null;
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, [aircraft.model_uuid, aircraft.aircraft_status]);
+    sqlResult = await client.query(SQL, [aircraft.model_uuid]);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -94,7 +94,7 @@ export const replaceAircraft = async (aircraft_uuid: string, aircraft: Aircraft)
   let client: any = null;
   let sqlResult: any = null;
   const SQL: string = `UPDATE aircraft SET status = $1 WHERE aircraft_uuid = $2`;
-  let values = [aircraft.aircraft_status, aircraft_uuid];
+  let values = [aircraft.status, aircraft_uuid];
   
   try {
     client = await pool.connect();
@@ -121,7 +121,7 @@ export const removeAircraft = async (aircraft_uuid: string): Promise<{ error: an
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, aircraft_uuid);
+    sqlResult = await client.query(SQL, [aircraft_uuid]);
     client.release();
   } catch (error) {
     if (client) client.release();
