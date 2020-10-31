@@ -8,7 +8,7 @@ require('uWebSockets.js').App().ws('/*', {
   compression: 0,
 
   open: (ws: any, req: any) => {
-      console.log("A Websocket connected!");
+    console.log("A Websocket connected!");
   },
 
   message: (ws: any, wsmessage: any, isBinary: any) => {
@@ -82,7 +82,12 @@ require('uWebSockets.js').App().ws('/*', {
               ws.send('error', error);
               return;
             }
-            ws.publish('location', response);
+            ws.publish('location',
+              {
+                topic: "location",
+                action: action,
+                message: response
+              });
           });
           break;
 
@@ -125,7 +130,7 @@ require('uWebSockets.js').App().ws('/*', {
         default:
           console.log("this is default shit, no good topic");
           break;
-        }
+      }
       // console.log("Message: ", message);
       // ws.publish('users', JSON.stringify(message));
     } catch (error) {
