@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import * as AircraftService from "../services/aircraftService";
 import Aircraft from "../models/aircraftInterface";
+import validator from "validator";
 
-export default class UserController {
 
-
-  static getOneById = async(req: Request, res: Response): Promise<Response> => {
-    try {
-      if (!req.params.id) {
+export default class AircraftController {
+  static getOneByUUID = async(req: Request, res: Response): Promise<Response> => {
+    try { 
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
-      }
+      } 
 
-      const aircraft: Aircraft = await AircraftService.getAircraft(req.params.id);
+      const aircraft: Aircraft = await AircraftService.getAircraft(req.params.uuid);
       return res.status(200).send({ aircraft });
     } catch (error) {
       console.error(error.message);
@@ -44,7 +44,7 @@ export default class UserController {
       return res.status(200).send({aircraft_uuid: result.newAircraftUUID});
 
     } catch (error) {
-      console.error("Delete Aircraft Error:", error.message);
+      console.error("Create Aircraft Error:", error.message);
       return res.sendStatus(400);
     }
   }
@@ -52,22 +52,22 @@ export default class UserController {
 
   static replaceAircraft = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
       }
 
       const aircraft: Aircraft = req.body;
-      let result = await AircraftService.replaceAircraft(req.params.id, aircraft);
+      let result = await AircraftService.replaceAircraft(req.params.uuid, aircraft);
 
       if (result.error) {
-        console.error("Update Put Aircraft Error:", result.error);
+        console.error("Replace Aircraft Error:", result.error);
         return res.sendStatus(400);
       }
 
       return res.sendStatus(200);
     
     } catch (error) {
-      console.error("Put Update Aircraft Error:", error.message);
+      console.error("Repalce Aircraft Error:", error.message);
       return res.sendStatus(400);
     }
   };
@@ -75,20 +75,20 @@ export default class UserController {
 
   static editAircraft = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
       }
 
-      let result = await AircraftService.updateAircraft(req.params.id, req.body);
+      let result = await AircraftService.updateAircraft(req.params.uuid, req.body);
       if (result.error) {
-        console.error("Patch Update Aircraft Error:", result.error);
+        console.error("Edit Aircraft Error:", result.error);
         return res.sendStatus(400);
       }
 
       return res.sendStatus(200);
 
     } catch (error) {
-      console.error("Patch Update Aircraft Error:", error.message);
+      console.error("Edit Aircraft Error:", error.message);
       return res.sendStatus(500);
     }
   };
@@ -96,11 +96,11 @@ export default class UserController {
 
   static removeAircraft = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
       }
 
-      let result = await AircraftService.removeAircraft(req.params.id);
+      let result = await AircraftService.removeAircraft(req.params.uuid);
       if (result.error) {
         console.error("Delete Aircraft Error:", result.error);
       }

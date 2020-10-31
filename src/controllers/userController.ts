@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import * as UserService from "../services/userService";
 import User from "../models/userInterface";
+import validator from "validator";
+
 
 export default class UserController {
-
-
-  static getOneById = async(req: Request, res: Response): Promise<Response> => {
+  static getOneByUUID = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
-      }
+      } 
 
-      const user: User = await UserService.getUser(req.params.id);
+      const user: User = await UserService.getUser(req.params.uuid);
       return res.status(200).send({ user });
     } catch (error) {
       console.error(error.message);
@@ -55,22 +55,22 @@ export default class UserController {
 
   static replaceUser = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
       }
 
       const user: User = req.body;
-      let result = await UserService.replaceUser(req.params.id, user);
+      let result = await UserService.replaceUser(req.params.uuid, user);
 
       if (result.error) {
-        console.error("Path Update Put User Error:", result.error);
+        console.error("Replace User Error:", result.error);
         return res.sendStatus(400);
       }
 
       return res.sendStatus(200);
     
     } catch (error) {
-      console.error("Put Update User Error:", error.message);
+      console.error("Repalce User Error:", error.message);
       return res.sendStatus(400);
     }
   };
@@ -78,11 +78,11 @@ export default class UserController {
 
   static editUser = async(req: Request, res: Response): Promise<Response> => {
     try {
-      if (!req.params.id) {
+      if (!req.params.uuid || !validator.isUUID(req.params.uuid, 4)) {
         return res.sendStatus(400);
       }
 
-      let result = await UserService.updateUser(req.params.id, req.body);
+      let result = await UserService.updateUser(req.params.uuid, req.body);
       if (result.error) {
         console.error("Edit User Error:", result.error);
         return res.sendStatus(400);
@@ -91,7 +91,7 @@ export default class UserController {
       return res.sendStatus(200);
 
     } catch (error) {
-      console.error("Patch Update User Error:", error.message);
+      console.error("Edit User Error:", error.message);
       return res.sendStatus(500);
     }
   };
