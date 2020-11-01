@@ -1,6 +1,6 @@
 import Aircraft, { validAircraftUpdateProps, baseAircraftData } from "../models/aircraftInterface";
 import { pool } from "./database.pool";
-import { formatSetPatchSQL } from "../util/util";
+import { formatSetSQL } from "../util/util";
 
 
 export const getAircraft = async (aircraft_uuid: string): Promise<Aircraft> => {
@@ -70,21 +70,21 @@ export const updateAircraft = async (aircraft_uuid: string, updateProps: any): P
   }
   let client: any = null;
   let sqlResult: any = null;
-  let SQL: string = "UPDATE aircraft ", sqlSubSet: string;
+  let sql: string = "UPDATE aircraft ", sqlSubSet: string;
   let values: Array<any>;
-  [sqlSubSet, values] = formatSetPatchSQL(validAircraftUpdateProps, updateProps);
+  [sqlSubSet, values] = formatSetSQL(validAircraftUpdateProps, updateProps, false);
   
   if (values.length <= 0) {
     return {error: "Body didnt have any valid column names for Aircraft"};
   }
 
-  SQL += (sqlSubSet + ` WHERE aircraft_uuid = $${values.length+1}`);
-  console.log("SQL:", SQL);
+  sql += (sqlSubSet + ` WHERE aircraft_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
   values.push(aircraft_uuid);
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -101,18 +101,26 @@ export const updateAircraft = async (aircraft_uuid: string, updateProps: any): P
 export const replaceAircraft = async (aircraft_uuid: string, aircraft: Aircraft): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
-  const SQL: string = `UPDATE aircraft SET status = $1 WHERE aircraft_uuid = $2`;
-  let values = [aircraft.status, aircraft_uuid];
+  let sql: string = "UPDATE aircraft ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetSQL(validAircraftUpdateProps, aircraft, true);
+  
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for Aircraft"};
+  }
+
+  sql += (sqlSubSet + ` WHERE aircraft_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
+  values.push(aircraft_uuid);
   
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Replace Aircraft Error from SQL Query error: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
@@ -135,7 +143,6 @@ export const removeAircraft = async (aircraft_uuid: string): Promise<{ error: an
     if (client) client.release();
     throw new Error("Delete Aircraft Error from SQL Query erorr: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row deleted"};

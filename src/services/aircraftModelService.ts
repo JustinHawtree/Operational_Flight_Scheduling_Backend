@@ -1,6 +1,6 @@
 import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData } from "../models/aircraftModelInterface";
 import { pool } from "./database.pool";
-import { formatSetPatchSQL } from "../util/util";
+import { formatSetSQL } from "../util/util";
 
 
 export const getAircraftModel = async (model_uuid: string): Promise<AircraftModel> => {
@@ -62,21 +62,21 @@ export const updateAircraftModel = async (model_uuid: string, updateProps: any):
   }
   let client: any = null;
   let sqlResult: any = null;
-  let SQL: string = "UPDATE aircraft_model ", sqlSubSet: string;
+  let sql: string = "UPDATE aircraft_model ", sqlSubSet: string;
   let values: Array<any>;
-  [sqlSubSet, values] = formatSetPatchSQL(validAircraftModelUpdateProps, updateProps);
+  [sqlSubSet, values] = formatSetSQL(validAircraftModelUpdateProps, updateProps, false);
   
   if (values.length <= 0) {
     return {error: "Body didnt have any valid column names for Aircraft Model"};
   }
 
-  SQL += (sqlSubSet + ` WHERE model_uuid = $${values.length+1}`);
-  console.log("SQL:", SQL);
+  sql += (sqlSubSet + ` WHERE model_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
   values.push(model_uuid);
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -93,18 +93,26 @@ export const updateAircraftModel = async (model_uuid: string, updateProps: any):
 export const replaceAircraftModel = async (model_uuid: string, aircraft_model: AircraftModel): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
-  const SQL: string = `UPDATE aircraft_model SET model_name = $1 WHERE model_uuid = $2`;
-  let values = [aircraft_model.model_name, model_uuid];
+  let sql: string = "UPDATE aircraft_model ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetSQL(validAircraftModelUpdateProps, aircraft_model, false);
   
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for Aircraft Model"};
+  }
+
+  sql += (sqlSubSet + ` WHERE model_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
+  values.push(model_uuid);
+
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Replace Aircraft Model Error from SQL Query error: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
@@ -127,7 +135,6 @@ export const removeAircraftModel = async (model_uuid: string): Promise<{ error: 
     if (client) client.release();
     throw new Error("Delete Aircraft Model Error from SQL Query erorr: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row deleted"};

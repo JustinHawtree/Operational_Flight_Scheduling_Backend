@@ -10,7 +10,8 @@ const aircraftHandler = async (action: string, payload: { [key: string]: string 
                 let aircraft: Aircraft = {
                     aircraft_uuid: "",
                     model_uuid: payload.model_uuid,
-                    aircraft_status: payload.aircraft_status
+                    tail_code: payload.tail_code,
+                    status: payload.status
                 };
 
                 let newAircraft = await aircraftService.createAircraft(aircraft);

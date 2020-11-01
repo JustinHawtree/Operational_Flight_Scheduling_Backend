@@ -20,7 +20,7 @@ router.put("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.replac
 // Edit an aircraft
 router.patch("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.editAircraft);
 
-// Delete an aircrft
+// Delete an aircraft
 router.delete("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.removeAircraft);
 
 export default router;

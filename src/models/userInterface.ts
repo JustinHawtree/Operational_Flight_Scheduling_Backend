@@ -13,8 +13,8 @@ export default interface User {
   last_login?: string;
 }
 
-export const baseUserData: string = `SELECT account_uuid, first_name, last_name, rank_uuid, pilot_status,
- role, user_status FROM account `;
-
 export const validUserUpdateProps: Array<string> = ["first_name", "last_name", "accepted", "rank_uuid",
   "pilot_status", "role", "user_status", "created_on", "last_login"];
+
+export const baseUserData: string = `SELECT account_uuid, first_name, last_name, rank_uuid, pilot_status,
+ role, user_status FROM account `;

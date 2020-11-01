@@ -1,6 +1,6 @@
 import User, { validUserUpdateProps, baseUserData } from "../models/userInterface";
 import { pool } from "./database.pool";
-import { formatSetPatchSQL } from "../util/util";
+import { formatSetSQL } from "../util/util";
 import validator from "validator";
 
 
@@ -102,21 +102,21 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
   }
   let client: any = null;
   let sqlResult: any = null;
-  let SQL: string = "UPDATE account ", sqlSubSet: string;
+  let sql: string = "UPDATE account ", sqlSubSet: string;
   let values: Array<any>;
-  [sqlSubSet, values] = formatSetPatchSQL(validUserUpdateProps, updateProps);
+  [sqlSubSet, values] = formatSetSQL(validUserUpdateProps, updateProps, false);
   
   if (values.length <= 0) {
     return {error: "Body didnt have any valid column names for User"};
   }
 
-  SQL += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
-  console.log("SQL:", SQL);
+  sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
   values.push(account_uuid);
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -133,13 +133,21 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
 export const replaceUser = async (account_uuid: string, user: User): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
-  const SQL: string = `UPDATE account SET first_name = $1, last_name = $2, accepted = $3, rank_uuid = $4, pilot_status = $5,
-                        role = $6, user_status = $7 WHERE account_uuid = $8`;
-  let values = [user.first_name, user.last_name, user.accepted, user.rank_uuid, user.pilot_status, user.role, user.user_status, account_uuid];
+  let sql: string = "UPDATE account ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetSQL(validUserUpdateProps, user, true);
+  
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for User"};
+  }
+
+  sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
+  values.push(account_uuid);
   
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
