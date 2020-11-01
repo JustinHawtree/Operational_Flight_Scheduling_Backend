@@ -6,10 +6,10 @@ import { checkRole } from "../middlewares/checkRole";
 const router = Router();
 
 // Get one aircraft
-router.get("/:uuid", [checkJwt, checkRole(["Admin"])], AircraftController.getOneByUUID);
+router.get("/:uuid", [checkJwt, checkRole(["Admin", "Scheduler"])], AircraftController.getOneByUUID);
 
 // Get all aircrafts
-router.get("/", [checkJwt, checkRole(["Admin"])], AircraftController.getAllAircrafts);
+router.get("/", [checkJwt, checkRole(["Admin", "Scheduler"])], AircraftController.getAllAircrafts);
 
 // Create an aircraft
 router.post("/", [checkJwt, checkRole(["Admin"])], AircraftController.createAircraft);

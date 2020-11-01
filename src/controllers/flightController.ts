@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as FlightService from "../services/flightService";
+import * as FlightCrewService from "../services/flightCrewService";
 import Flight from "../models/flightInterface";
 import validator from "validator";
 
@@ -41,6 +42,14 @@ export default class FlightController {
         return res.sendStatus(400);
       }
 
+      if (req.body.crew_members && req.body.crew_members.length > 0) {
+        let crewResult = await FlightCrewService.createFlightCrewsByFlight(result.newFlightUUID, req.body.crew_members);
+        if (crewResult.error) {
+          console.error("Create Flight Crew Members Error:", crewResult.error);
+          return res.sendStatus(400);
+        }
+      }
+
       return res.status(200).send({flight_uuid: result.newFlightUUID});
 
     } catch (error) {
@@ -64,6 +73,15 @@ export default class FlightController {
         return res.sendStatus(400);
       }
 
+      if (req.body.crew_members && req.body.crew_members.length > 0) {
+        let deleteCrewResult = await FlightCrewService.removeAllFlightCrewsByFlight(req.params.uuid);
+        let crewResult = await FlightCrewService.createFlightCrewsByFlight(req.params.uuid, req.body.crew_members);
+        if (crewResult.error) {
+          console.error("Create Flight Crew Members Error:", crewResult.error);
+          return res.sendStatus(400);
+        }
+      }
+
       return res.sendStatus(200);
     
     } catch (error) {
@@ -83,6 +101,15 @@ export default class FlightController {
       if (result.error) {
         console.error("Edit Flight Error:", result.error);
         return res.sendStatus(400);
+      }
+
+      if (req.body.crew_members && req.body.crew_members.length > 0) {
+        let deleteCrewResult = await FlightCrewService.removeAllFlightCrewsByFlight(req.params.uuid);
+        let crewResult = await FlightCrewService.createFlightCrewsByFlight(req.params.uuid, req.body.crew_members);
+        if (crewResult.error) {
+          console.error("Create Flight Crew Members Error:", crewResult.error);
+          return res.sendStatus(400);
+        }
       }
 
       return res.sendStatus(200);
