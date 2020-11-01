@@ -57,6 +57,43 @@ export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error:
 }
 
 
+type CrewMembers = { account_uuid: string, crew_position_uuid: string };
+
+export const createFlightCrewsByFlight = async (flight_uuid: string, crew_members: Array<CrewMembers>): Promise<{ error: any }> => {
+  let client: any = null;
+  let sqlResult: any = null;
+  if (!crew_members || crew_members.length === 0) {
+    return {error: "Create Flight Crews By Flight was given a null or empty crew_members argument"};
+  }
+
+  try {
+
+    let valueArray = [];
+    let crewMembersSQL = "INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid) VALUES ";
+    let valuesIndex = 1;
+
+    for (const item of crew_members) {
+      crewMembersSQL += `($${valuesIndex++}, $${valuesIndex++}, $${valuesIndex++}),`;
+      valueArray.push(flight_uuid, item.account_uuid, item.crew_position_uuid);
+    }
+    crewMembersSQL = crewMembersSQL.slice(0, -1);
+
+    client = await pool.connect();
+    sqlResult = await client.query(crewMembersSQL, valueArray);
+    client.release();
+
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Create Flight Crews By Flight Error :"+error);
+  }
+
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row updated"};
+  }
+  return { error: false };
+}
+
+
 export const updateFlightCrew = async (flight_crew_uuid: string, updateProps: any): Promise< { error: any } > => {
   if (!updateProps) {
     return {error: "Update Flight Crew was given a null or empty updateProps argument"};
@@ -131,6 +168,28 @@ export const removeFlightCrew = async (flight_crew_uuid: string): Promise<{ erro
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, [flight_crew_uuid]);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Delete Flight Crew Error from SQL Query erorr: "+error);
+  }
+
+  if (sqlResult.rowCount <= 0) {
+    return {error: "No row deleted"};
+  }
+
+  return {error: false};
+}
+
+
+export const removeAllFlightCrewsByFlight = async(flight_uuid: string): Promise<{ error: any }> => {
+  let client: any = null;
+  let sqlResult: any = null;
+  const SQL: string = 'DELETE FROM flight_crew WHERE flight_uuid = $1';
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL, [flight_uuid]);
     client.release();
   } catch (error) {
     if (client) client.release();
