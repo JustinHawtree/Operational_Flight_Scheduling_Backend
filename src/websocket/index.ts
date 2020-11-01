@@ -1,6 +1,9 @@
 import locationHandler from "./handlers/locationHandler";
 import aircraftHandler from "./handlers/aircraftHandler";
 import aircraftModelHandler from "./handlers/aircraftModelHandler";
+import crewPositionHandler from "./handlers/crewPositionHandler";
+
+
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -95,21 +98,18 @@ require('uWebSockets.js').App().ws('/*', {
 
 
         case "crew_position":
-          switch (action) {
-            case "add":
-              console.log("this is addding case!");
-              break;
-            case "edit":
-              console.log("this is editing case!");
-              break;
-            case "delete":
-              console.log("this is deleting case!");
-              break;
-            default:
-              console.log("not a valid action");
-              break;
-          }
-          ws.publish('crew_position', message);
+          crewPositionHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('crew_position',
+              {
+                topic: "crew_position",
+                action: action,
+                message: response
+              });
+          });
           break;
 
 
