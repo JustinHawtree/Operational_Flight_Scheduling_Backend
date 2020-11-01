@@ -1,5 +1,5 @@
 import { pool } from "./database.pool";
-import { formatSetPatchSQL } from "../util/util";
+import { formatSetSQL } from "../util/util";
 import CrewPosition, { baseCrewPositionData, validCrewPositionUpdateProps } from "../models/crewPositionInterface";
 
 
@@ -62,21 +62,21 @@ export const updateCrewPosition = async (crew_position_uuid: string, updateProps
   }
   let client: any = null;
   let sqlResult: any = null;
-  let SQL: string = "UPDATE crew_position ", sqlSubSet: string;
+  let sql: string = "UPDATE crew_position ", sqlSubSet: string;
   let values: Array<any>;
-  [sqlSubSet, values] = formatSetPatchSQL(validCrewPositionUpdateProps, updateProps);
+  [sqlSubSet, values] = formatSetSQL(validCrewPositionUpdateProps, updateProps, false);
   
   if (values.length <= 0) {
     return {error: "Body didnt have any valid column names for Crew Position"};
   }
 
-  SQL += (sqlSubSet + ` WHERE crew_position_uuid = $${values.length+1}`);
-  console.log("SQL:", SQL);
+  sql += (sqlSubSet + ` WHERE crew_position_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
   values.push(crew_position_uuid);
 
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
@@ -93,18 +93,26 @@ export const updateCrewPosition = async (crew_position_uuid: string, updateProps
 export const replaceCrewPosition = async (crew_position_uuid: string, crewPosition: CrewPosition): Promise<{ error: any }> => {
   let client: any = null;
   let sqlResult: any = null;
-  const SQL: string = `UPDATE crew_position SET position = $1, required = $2 WHERE crew_position_uuid = $3`;
-  let values = [crewPosition.position, crewPosition.required, crew_position_uuid];
+  let sql: string = "UPDATE crew_position ", sqlSubSet: string;
+  let values: Array<any>;
+  [sqlSubSet, values] = formatSetSQL(validCrewPositionUpdateProps, crewPosition, true);
+  
+  if (values.length <= 0) {
+    return {error: "Body didnt have any valid column names for Crew Position"};
+  }
+
+  sql += (sqlSubSet + ` WHERE crew_position_uuid = $${values.length+1}`);
+  console.log("SQL:", sql);
+  values.push(crew_position_uuid);
   
   try {
     client = await pool.connect();
-    sqlResult = await client.query(SQL, values);
+    sqlResult = await client.query(sql, values);
     client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Replace Crew Position Error from SQL Query error: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
@@ -127,7 +135,6 @@ export const removeCrewPosition = async (crew_position_uuid: string): Promise<{ 
     if (client) client.release();
     throw new Error("Delete Crew Position Error from SQL Query erorr: "+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row deleted"};

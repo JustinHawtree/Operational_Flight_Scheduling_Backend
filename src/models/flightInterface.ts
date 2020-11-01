@@ -22,4 +22,7 @@ export default interface Flight{
         ON FT.flight_uuid = FC.flight_uuid
         GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
             FT.title, FT.description, location_uuid, aircraft_uuid `
+
+  export const flightGroupBy: string =
+    `GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, FT.title, FT.description, location_uuid, aircraft_uuid`;
   
