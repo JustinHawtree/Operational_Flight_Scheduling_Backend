@@ -1,4 +1,6 @@
 import locationHandler from "./handlers/locationHandler";
+import aircraftHandler from "./handlers/aircraftHandler";
+import aircraftModelHandler from "./handlers/aircraftModelHandler";
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -112,30 +114,45 @@ require('uWebSockets.js').App().ws('/*', {
 
 
         case "aircraft":
-          switch (action) {
-            case "add":
-              console.log("this is addding case!");
-              break;
-            case "edit":
-              console.log("this is editing case!");
-              break;
-            case "delete":
-              console.log("this is deleting case!");
-              break;
-            default:
-              console.log("not a valid action");
-              break;
-          }
+          aircraftHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('aircraft',
+              {
+                topic: "aicraft",
+                action: action,
+                message: response
+              });
+          });
           break;
+
+        case "aircraft_model":
+          aircraftModelHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('aircraft_model',
+              {
+                topic: "aicraft_model",
+                action: action,
+                message: response
+              });
+          });
+          break;
+
+
         default:
-          console.log("this is default shit, no good topic");
+          console.log("this is default, no valid topic given");
           break;
       }
       // console.log("Message: ", message);
       // ws.publish('users', JSON.stringify(message));
     } catch (error) {
-      console.log("Websocket: not valid json message", error);
-      console.log("Websocket: Message:", stringy);
+      console.log("Websocket not valid json message", error);
+      console.log("Websocket Message:", stringy);
       return;
     }
 

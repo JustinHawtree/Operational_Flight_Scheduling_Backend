@@ -24,7 +24,7 @@ const locationHandler = async (action: string, payload: { [key: string]: string 
       break;
 
     case "edit":
-      console.log("Websocket: Location Edit case!");
+      console.log("Websocket Location Edit case!");
       let updateProps: any = {};
       try {
         Object.keys(payload).forEach(element => {
