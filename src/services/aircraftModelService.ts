@@ -1,11 +1,11 @@
-import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData } from "../models/aircraftModelInterface";
+import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../models/aircraftModelInterface";
 import { pool } from "./database.pool";
 import { formatSetSQL } from "../util/util";
 
 
 export const getAircraftModel = async (model_uuid: string): Promise<AircraftModel> => {
   let client: any = null;
-  const SQL: string = baseAircraftModelData + `WHERE AM.model_uuid = $1 GROUP BY AM.model_uuid, AM.model_name`;
+  const SQL: string = baseAircraftModelData + `WHERE AM.model_uuid = $1 ` + aircraftModelGroupBy;
   let sqlResult: any = null;
 
   try {
@@ -22,7 +22,7 @@ export const getAircraftModel = async (model_uuid: string): Promise<AircraftMode
 
 export const getAllAircraftModels = async (): Promise<Array<AircraftModel>> => {
   let client: any = null;
-  const SQL: string = baseAircraftModelData + `GROUP BY AM.model_uuid, AM.model_name`;
+  const SQL: string = baseAircraftModelData + aircraftModelGroupBy;
   let sqlResult: any = null;
   
   try {

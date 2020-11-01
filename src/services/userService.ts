@@ -30,7 +30,7 @@ export const getUser = async (account_uuid: string): Promise<User> => {
 export const getAllUsers = async (): Promise<Array<User>> => {
   let client: any = null;
   let userList: Array<User>;
-  const SQL: string = baseUserData + "WHERE role != 'Admin'";
+  const SQL: string = baseUserData + "WHERE role = 'User'";
   let sqlResult: any = null;
   
   try {

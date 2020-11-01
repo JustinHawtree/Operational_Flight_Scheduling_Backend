@@ -12,7 +12,7 @@ export default class UserController {
       } 
 
       const user: User = await UserService.getUser(req.params.uuid);
-      return res.status(200).send({ user });
+      return res.status(200).send({ airman: user });
     } catch (error) {
       console.error(error.message);
       return res.sendStatus(500);
@@ -23,7 +23,7 @@ export default class UserController {
   static getAllUsers =  async(_: any, res: Response): Promise<Response> => {
     try {
       const users: Array<User> = await UserService.getAllUsers();
-      return res.status(200).send({ users });
+      return res.status(200).send({ airmen: users });
     } catch (error) {
       console.error(error.message);
       return res.sendStatus(500);
@@ -45,7 +45,7 @@ export default class UserController {
   static getPilots = async(_: any, res: Response): Promise<Response> => {
     try {
       const users: Array<User> = await UserService.getPilots();
-      return res.status(200).send({ users });
+      return res.status(200).send({ pilots: users });
     } catch (error) {
       console.error(error.message);
       return res.sendStatus(500);
