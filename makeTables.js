@@ -265,7 +265,7 @@ const preparedSQL = [
       crew_position_uuid UUID,
       PRIMARY KEY (flight_crew_uuid),
       FOREIGN KEY (flight_uuid) REFERENCES flight (flight_uuid) ON DELETE CASCADE,
-      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid) ON DELETE CASCADE,
+      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid),
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   );`,
 

@@ -6,10 +6,10 @@ import { checkRole } from "../middlewares/checkRole";
 const router = Router();
 
 // Get one location
-router.get("/:uuid", [checkJwt, checkRole(["Admin"])], locationController.getOneByUUID);
+router.get("/:uuid", [checkJwt, checkRole(["Admin", "Scheduler"])], locationController.getOneByUUID);
 
 // Get all locations
-router.get("/", [checkJwt, checkRole(["Admin"])], locationController.getAllLocations);
+router.get("/", [checkJwt, checkRole(["Admin", "Scheduler"])], locationController.getAllLocations);
 
 // Create a location
 router.post("/", [checkJwt, checkRole(["Admin"])], locationController.createLocation);

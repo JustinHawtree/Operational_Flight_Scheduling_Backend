@@ -6,10 +6,10 @@ import { checkRole } from "../middlewares/checkRole";
 const router = Router();
 
 // Get one Crew Position
-router.get("/:uuid", [checkJwt, checkRole(["Admin"])], CrewPositionController.getOneByUUID);
+router.get("/:uuid", [checkJwt, checkRole(["Admin", "Scheduler"])], CrewPositionController.getOneByUUID);
 
 // Get all Crew Positions
-router.get("/", [checkJwt, checkRole(["Admin"])], CrewPositionController.getAllCrewPositions);
+router.get("/", [checkJwt, checkRole(["Admin", "Scheduler"])], CrewPositionController.getAllCrewPositions);
 
 // Create a Crew Position
 router.post("/", [checkJwt, checkRole(["Admin"])], CrewPositionController.createCrewPosition);
