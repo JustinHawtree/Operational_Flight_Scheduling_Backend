@@ -14,3 +14,5 @@ export const baseAircraftModelData: string =
     ON AM.model_uuid = MP.model_uuid
     LEFT OUTER JOIN crew_position CP
     ON MP.crew_position_uuid = CP.crew_position_uuid `;
+
+export const aircraftModelGroupBy: string = `GROUP BY AM.model_uuid, AM.model_name`;
