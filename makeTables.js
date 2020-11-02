@@ -13,7 +13,7 @@ const pool = new Pool({
 // TODO:
   // Create another table that links users to a universal crew position "rank"
   // Create another table that links universal ranks to crew_positions
-  // Aircrafts need an generated id like  MY 12-3456
+  // Aircrafts need an generated id like  MY 12-3456 (ICAO)
     // First 2 Letters represent the Aircraft Base Code
     // First 2 Numbers represent the year of order for that aircraft
     // Last 4 Numbers is in serial from that ordered year of aircrafts 
@@ -29,7 +29,7 @@ const preparedSQL = [
 
   /* A enum of the flight experience a pilot can have */
   `CREATE TABLE pilot_status (
-      status VARCHAR(5),
+      status VARCHAR(5) NOT NULL,
       PRIMARY KEY(status)
   );`,
   `INSERT INTO pilot_status (status)
@@ -37,7 +37,7 @@ const preparedSQL = [
 
 
   `CREATE TABLE role (
-      role_name VARCHAR(20),
+      role_name VARCHAR(20) NOT NULL,
       PRIMARY KEY(role_name)
   )`,
   `INSERT INTO role (role_name)
@@ -159,11 +159,22 @@ const preparedSQL = [
              ('1785b149-862d-46ca-b4cd-73b975de19dd', 'Flight Engineer', TRUE),
              ('f6d5268e-69d4-4cd0-b932-610341143548', 'Gunner', TRUE);`,
 
+  `CREATE TABLE meta_position (
+      meta_position_uuid UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
+      meta_name VARCHAR(30) NOT NULL,
+      crew_position_uuid UUID,
+      PRIMARY KEY (meta_position_uuid),
+      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
+  )`,
+
+//   `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
+//       VALUES ()`,
+
   `CREATE TABLE model_position (
       model_position_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
       crew_position_uuid UUID,
-      position_order SMALLINT,
+      position_order SMALLINT NOT NULL,
       PRIMARY KEY (model_position_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
@@ -197,24 +208,25 @@ const preparedSQL = [
   `CREATE TABLE aircraft (
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
-      status VARCHAR(20),
+      tail_code VARCHAR(7) NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'Available',
       PRIMARY KEY (aircraft_uuid),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (status) REFERENCES aircraft_status (status)
   );`,
 
 
-  `INSERT INTO aircraft (aircraft_uuid, model_uuid, status)
-      VALUES ('63c6821a-fb98-418b-9336-c60beb837708', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'Available'),
-             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'db2863ea-369e-4262-ad17-bda986ae9632', 'Available'),
-             ('475eb3d2-5b9a-4efc-8a09-96849a136b00', 'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'Available');`,
+  `INSERT INTO aircraft (aircraft_uuid, model_uuid, tail_code, status)
+      VALUES ('63c6821a-fb98-418b-9336-c60beb837708', '2c04be67-fc24-4eba-b6ca-57c81daab9c4', 'MY89112', 'Available'),
+             ('5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'db2863ea-369e-4262-ad17-bda986ae9632', 'MY92342', 'Available'),
+             ('475eb3d2-5b9a-4efc-8a09-96849a136b00', 'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b', 'MY96232', 'Available');`,
 
 
 
   `CREATE TABLE location (
       location_uuid UUID DEFAULT uuid_generate_v4(),
-      location_name VARCHAR(20),
-      track_num SMALLINT,
+      location_name VARCHAR(20) NOT NULL,
+      track_num SMALLINT NOT NULL,
       PRIMARY KEY (location_uuid)
   );`,
 
@@ -235,13 +247,13 @@ const preparedSQL = [
       color VARCHAR(30) NOT NULL,
       title VARCHAR(50) NOT NULL,
       description VARCHAR(200),
-      all_day BOOLEAN NOT NULL DEFAULT FALSE,
+      allDay BOOLEAN NOT NULL DEFAULT FALSE,
       PRIMARY KEY (flight_uuid),
       FOREIGN KEY (aircraft_uuid) REFERENCES aircraft (aircraft_uuid),
       FOREIGN KEY (location_uuid) REFERENCES location (location_uuid)
   );`,
 
-  `INSERT INTO flight (flight_uuid, aircraft_uuid, location_uuid, start_time, end_time, color, title, description, all_day)
+  `INSERT INTO flight (flight_uuid, aircraft_uuid, location_uuid, start_time, end_time, color, title, description, allDay)
       VALUES ('0bf6a55d-a5e7-4835-8d90-3a6bdd4f07d6', '63c6821a-fb98-418b-9336-c60beb837708', '96017add-cf3d-4075-b09b-7fd9ad690e04', '${moment().utc().format()}', '${moment().utc().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend', FALSE),
              ('e74aa81e-e861-4329-823c-0c646c3f3a38', '5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'ea703189-31ea-4235-bdbb-b017731fb29c', '${moment().utc().add(2, 'h').format()}', '${moment().utc().add(6, 'h').format()}', '#eb8334', 'Mock Flight 2', 'Mock Flight testing backend 2', FALSE);`,
 
@@ -253,7 +265,7 @@ const preparedSQL = [
       crew_position_uuid UUID,
       PRIMARY KEY (flight_crew_uuid),
       FOREIGN KEY (flight_uuid) REFERENCES flight (flight_uuid) ON DELETE CASCADE,
-      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid) ON DELETE CASCADE,
+      FOREIGN KEY (account_uuid) REFERENCES account (account_uuid),
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   );`,
 
