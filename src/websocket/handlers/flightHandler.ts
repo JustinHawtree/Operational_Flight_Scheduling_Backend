@@ -1,7 +1,8 @@
 import Flight, { validFlightUpdateProps } from "../../models/flightInterface";
 import * as flightService from "../../services/flightService";
+import * as flightCrewService from "../../services/flightCrewService";
 
-const flightHandler = async (action: string, payload: { [key: string]: string }, callback: (error: any, response: any) => any) => {
+const flightHandler = async (action: string, payload: { [key: string]: any }, callback: (error: any, response: any) => any) => {
     switch (action) {
 
         case "add":
@@ -20,7 +21,16 @@ const flightHandler = async (action: string, payload: { [key: string]: string },
                 };
 
                 let newFlight = await flightService.createFlight(flight);
-                callback(false, { ...flight, flight_uuid: newFlight.newFlightUUID });
+
+                if (payload.crew_members && payload.crew_members.length > 0) {
+                    let crewResult = await flightCrewService.createFlightCrewsByFlight(newFlight.newFlightUUID, payload.crew_members);
+                    if (crewResult.error) {
+                        console.error("Create Flight Crew Members Error:", crewResult.error);
+                        callback(crewResult.error, { success: false });
+                    }
+                }
+
+                callback(false, { ...flight, flight_uuid: newFlight.newFlightUUID, crew_members: payload.crew_members });
 
             } catch (error) {
                 console.error("Websocket Flight add error:", error);
@@ -49,7 +59,15 @@ const flightHandler = async (action: string, payload: { [key: string]: string },
                     callback(result.error, null);
                     break;
                 }
-                callback(false, { ...updateProps, flight_uuid: payload.flight_uuid });
+                if (payload.crew_members && payload.crew_members.length > 0) {
+                    let deleteCrewResult = await flightCrewService.removeAllFlightCrewsByFlight(payload.flight_uuid);
+                    let crewResult = await flightCrewService.createFlightCrewsByFlight(payload.flight_uuid, payload.crew_members);
+                    if (crewResult.error) {
+                        console.error("Create Flight Crew Members Error:", crewResult.error);
+                        callback(crewResult.error, { success: false });
+                    }
+                }
+                callback(false, { ...updateProps, flight_uuid: payload.flight_uuid, crew_members: payload.crew_members });
             } catch (error) {
                 console.log("Websocket Flight edit error:", error);
                 callback("Websocket Flight edit error: " + error, null);
