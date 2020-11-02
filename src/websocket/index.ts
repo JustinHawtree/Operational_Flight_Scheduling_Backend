@@ -2,8 +2,8 @@ import locationHandler from "./handlers/locationHandler";
 import aircraftHandler from "./handlers/aircraftHandler";
 import aircraftModelHandler from "./handlers/aircraftModelHandler";
 import crewPositionHandler from "./handlers/crewPositionHandler";
-
-
+import flightHandler from "./handlers/flightHandler";
+import flightCrewHandler from "./handlers/flightCrewHandler";
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -44,40 +44,34 @@ require('uWebSockets.js').App().ws('/*', {
 
 
         case "flight_crew":
-          switch (action) {
-            case "add":
-              console.log("this is addding case!");
-              break;
-            case "edit":
-              console.log("this is editing case!");
-              break;
-            case "delete":
-              console.log("this is deleting case!");
-              break;
-            default:
-              console.log("not a valid action");
-              break;
-          }
-          ws.publish('flight_crew', message);
+          flightCrewHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('flight_crew',
+              {
+                topic: "flight_crew",
+                action: action,
+                message: response
+              });
+          });
           break;
 
 
         case "flight":
-          switch (action) {
-            case "add":
-              console.log("this is addding case!");
-              break;
-            case "edit":
-              console.log("this is editing case!");
-              break;
-            case "delete":
-              console.log("this is deleting case!");
-              break;
-            default:
-              console.log("not a valid action");
-              break;
-          }
-          ws.publish('flight', message);
+          flightHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              ws.send('error', error);
+              return;
+            }
+            ws.publish('flight',
+              {
+                topic: "flight",
+                action: action,
+                message: response
+              });
+          });
           break;
 
 
