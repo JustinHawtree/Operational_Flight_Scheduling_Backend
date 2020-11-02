@@ -14,14 +14,12 @@ export const validFlightUpdateProps: Array<string> = ["aircraft_uuid", "location
   "start_time", "end_time", "color", "title", "description", "allDay"];
 
 export const baseFlightData: string =
-  `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description, allDay,
+  `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description, allDay as "allDay",
     COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid))
       FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
     FROM flight FT
     LEFT OUTER JOIN flight_crew FC
-    ON FT.flight_uuid = FC.flight_uuid
-    GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, 
-      FT.title, FT.description, location_uuid, aircraft_uuid `
+    ON FT.flight_uuid = FC.flight_uuid `
 
 export const flightGroupBy: string =
   `GROUP BY FT.flight_uuid, FT.start_time, FT.end_time, FT.color, FT.title, FT.description, location_uuid, aircraft_uuid`;
