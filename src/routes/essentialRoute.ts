@@ -5,6 +5,6 @@ import { checkJwt } from "../middlewares/checkJwt";
 const router = Router();
 
 // Get one aircraft
-router.get("/", [checkJwt], EssentialController.getEssential);
+router.get("/essential", [checkJwt], EssentialController.getEssential);
 
 export default router;
