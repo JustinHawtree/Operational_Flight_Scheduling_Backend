@@ -13,11 +13,11 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001']
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://airforceofs.com', 'https://airforceofs.com']
 }))
 
 
-app.use("/", routes);
+app.use("/api", routes);
 
 app.listen(PORT, (err: any) => {
   if (err) {
