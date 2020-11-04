@@ -2,12 +2,13 @@ import { Router } from "express";
 import UserController from "../controllers/userController";
 import { checkJwt } from "../middlewares/checkJwt";
 import { checkRole } from "../middlewares/checkRole";
+import { approveUsers } from "../services/userService";
 
 const router = Router();
 
 
 // Get Non-Approved Users
-router.get("/approval", [checkJwt, checkRole(["Admin"])], UserController.getNonApprovedUsers);
+router.get("/nonapproved", [checkJwt, checkRole(["Admin"])], UserController.getNonApprovedUsers);
 
 // Get Pilots
 router.get("/pilots", [checkJwt, checkRole(["Admin"])], UserController.getPilots); 
@@ -27,5 +28,8 @@ router.put("/:uuid", [checkJwt, checkRole(["Admin"])], UserController.replaceUse
 
 // Edit one user
 router.patch("/:uuid", [checkJwt, checkRole(["Admin"])], UserController.editUser);
+
+// Approve a list of user uuids
+router.patch("/approval", [checkJwt, checkRole(["Admin"])], UserController.approveUser);
 
 export default router;
