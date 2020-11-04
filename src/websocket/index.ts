@@ -8,7 +8,7 @@ import { parse } from "dotenv/types";
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
-  idleTimeout: 300,
+  idleTimeout: 60, // Author of ws library hard codes the timeout to 1 min
   maxBackpressure: 1024,
   maxPayloadLength: 512,
   compression: 0,
@@ -138,6 +138,7 @@ require('uWebSockets.js').App().ws('/*', {
           });
           break;
 
+
         case "aircraft_model":
           aircraftModelHandler(action, message, (error: any, response: any) => {
             if (error) {
@@ -155,6 +156,12 @@ require('uWebSockets.js').App().ws('/*', {
           break;
 
 
+        case "ping":
+          let date = new Date();
+          console.log("pong", date);
+          break;
+
+          
         default:
           console.log("Websocket Error: Invalid Topic Error: Topic Given:", topic);
           ws.send(JSON.stringify({error: "Invalid Topic Error:"}));
