@@ -4,6 +4,7 @@ import aircraftModelHandler from "./handlers/aircraftModelHandler";
 import crewPositionHandler from "./handlers/crewPositionHandler";
 import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
+import { parse } from "dotenv/types";
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -24,8 +25,11 @@ require('uWebSockets.js').App().ws('/*', {
       stringy = buffer.toString();
       let parsedMessage = JSON.parse(stringy);
       console.log("Websocket Message:",parsedMessage);
-      let token = parsedMessage.token;
       
+      let token = parsedMessage.token;
+      let error = parsedMessage.error;
+
+
       let topic = parsedMessage.topic;
       let action = parsedMessage.action;
       let message = parsedMessage.message;
@@ -33,6 +37,8 @@ require('uWebSockets.js').App().ws('/*', {
 
       // Down below ensure the request is from an admin
       // for changes like in the users account
+
+
 
       switch (topic) {
         case "user":
@@ -82,7 +88,8 @@ require('uWebSockets.js').App().ws('/*', {
           locationHandler(action, message, (error: any, response: any) => {
             console.log("Got Here3");
             if (error) {
-              ws.send('error', error);
+              console.log("Error Websocket location sending");
+              ws.send(JSON.stringify({error: "Location blew up!"}));
               return;
             }
             console.log("Got Here4");
