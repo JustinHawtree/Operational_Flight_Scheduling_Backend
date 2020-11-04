@@ -59,11 +59,11 @@ require('uWebSockets.js').App().ws('/*', {
               return;
             }
             ws.publish('flight_crew',
-              {
+              JSON.stringify({
                 topic: "flight_crew",
                 action: action,
                 message: response
-              });
+              }));
           });
           break;
 
@@ -71,15 +71,16 @@ require('uWebSockets.js').App().ws('/*', {
         case "flight":
           flightHandler(action, message, (error: any, response: any) => {
             if (error) {
-              ws.send('error', error);
+              console.log("Websocket Error: Flight Error:", error);
+              ws.send(JSON.stringify({error: "Flight Error"}));
               return;
             }
             ws.publish('flight',
-              {
+              JSON.stringify({
                 topic: "flight",
                 action: action,
                 message: response
-              });
+              }));
           });
           break;
 
@@ -88,8 +89,8 @@ require('uWebSockets.js').App().ws('/*', {
           locationHandler(action, message, (error: any, response: any) => {
             console.log("Got Here3");
             if (error) {
-              console.log("Error Websocket location sending");
-              ws.send(JSON.stringify({error: "Location blew up!"}));
+              console.log("Websocket Error: Location Error:", error);
+              ws.send(JSON.stringify({error: "Location Error"}));
               return;
             }
             console.log("Got Here4");
@@ -107,15 +108,16 @@ require('uWebSockets.js').App().ws('/*', {
         case "crew_position":
           crewPositionHandler(action, message, (error: any, response: any) => {
             if (error) {
-              ws.send('error', error);
+              console.log("Websocket Error: Crew_Position Error:", error);
+              ws.send(JSON.stringify({error: "Crew_Position Error"}));
               return;
             }
             ws.publish('crew_position',
-              {
+              JSON.stringify({
                 topic: "crew_position",
                 action: action,
                 message: response
-              });
+              }));
           });
           break;
 
@@ -123,36 +125,39 @@ require('uWebSockets.js').App().ws('/*', {
         case "aircraft":
           aircraftHandler(action, message, (error: any, response: any) => {
             if (error) {
-              ws.send('error', error);
+              console.log("Websocket Error: Aircraft Error:", error);
+              ws.send(JSON.stringify({error: "Aircraft Error"}));
               return;
             }
             ws.publish('aircraft',
-              {
+              JSON.stringify({
                 topic: "aicraft",
                 action: action,
                 message: response
-              });
+              }));
           });
           break;
 
         case "aircraft_model":
           aircraftModelHandler(action, message, (error: any, response: any) => {
             if (error) {
-              ws.send('error', error);
+              console.log("Websocket Error: Aircraft Model Error:", error);
+              ws.send(JSON.stringify({error: "Aircraft Modal  Error"}));
               return;
             }
             ws.publish('aircraft_model',
-              {
+              JSON.stringify({
                 topic: "aicraft_model",
                 action: action,
                 message: response
-              });
+              }));
           });
           break;
 
 
         default:
-          console.log("this is default, no valid topic given");
+          console.log("Websocket Error: Invalid Topic Error: Topic Given:", topic);
+          ws.send(JSON.stringify({error: "Invalid Topic Error:"}));
           break;
       }
       // console.log("Message: ", message);
