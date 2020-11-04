@@ -22,6 +22,7 @@ require('uWebSockets.js').App().ws('/*', {
       let buffer = Buffer.from(wsmessage);
       stringy = buffer.toString();
       let parsedMessage = JSON.parse(stringy);
+      console.log("Websocket Message:",parsedMessage);
       let token = parsedMessage.token;
       let topic = parsedMessage.topic;
       let action = parsedMessage.action;
