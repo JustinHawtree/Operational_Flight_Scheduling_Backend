@@ -14,6 +14,7 @@ require('uWebSockets.js').App().ws('/*', {
 
   open: (ws: any, req: any) => {
     console.log("A Websocket connected!");
+    ws.subscribe('location');
   },
 
   message: (ws: any, wsmessage: any, isBinary: any) => {
@@ -24,6 +25,7 @@ require('uWebSockets.js').App().ws('/*', {
       let parsedMessage = JSON.parse(stringy);
       console.log("Websocket Message:",parsedMessage);
       let token = parsedMessage.token;
+      
       let topic = parsedMessage.topic;
       let action = parsedMessage.action;
       let message = parsedMessage.message;
@@ -78,16 +80,19 @@ require('uWebSockets.js').App().ws('/*', {
 
         case "location":
           locationHandler(action, message, (error: any, response: any) => {
+            console.log("Got Here3");
             if (error) {
               ws.send('error', error);
               return;
             }
+            console.log("Got Here4");
             ws.publish('location',
-              {
+              JSON.stringify({
                 topic: "location",
                 action: action,
                 message: response
-              });
+              }));
+            console.log("Got Here5");
           });
           break;
 
