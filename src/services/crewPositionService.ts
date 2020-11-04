@@ -39,7 +39,7 @@ export const getAllCrewPositions = async (): Promise<Array<CrewPosition>> => {
 
 export const createCrewPosition = async (crewPosition: CrewPosition): Promise<{ error: any, newCrewPositionUUID: string }> => {
   let client: any = null;
-  const SQL: string = `INSERT INTO crew_positon (position, required) VALUES ($1, $2) RETURNING crew_position_uuid`;
+  const SQL: string = `INSERT INTO crew_position (position, required) VALUES ($1, $2) RETURNING crew_position_uuid`;
   let sqlResult: any = null;
 
   try {

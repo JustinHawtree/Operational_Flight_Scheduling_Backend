@@ -18,6 +18,6 @@ routes.use("/location", location);
 routes.use('/aircraft_model', aircraft_model);
 routes.use("/crew_position", crew_position);
 routes.use("/flight", flight);
-routes.use("/", essential);
+routes.use("/essential", essential);
 
 export default routes;
