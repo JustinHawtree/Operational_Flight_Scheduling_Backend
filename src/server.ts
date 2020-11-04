@@ -4,7 +4,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require('cors');
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 import routes from "./routes";
 
@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://localhost:3000', 'http://localhost:3000', 'https://www.airforceofs.com', 'https://airforceofs.com']
+  origin: ['https://localhost:3000', 'http://localhost:3000','http://localhost:3001', 'https://www.airforceofs.com', 'https://airforceofs.com']
 }))
 
 
