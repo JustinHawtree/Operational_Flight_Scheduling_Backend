@@ -80,7 +80,7 @@ const flightHandler = async (action: string, payload: { [key: string]: any }, ca
         delete returnFlight["end_time"];
 
         callback(false, {...returnFlight, end, start});
-
+        
       
       } catch (error) {
         console.log("Websocket Flight edit error:", error);

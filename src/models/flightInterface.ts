@@ -14,7 +14,7 @@ export const validFlightUpdateProps: Array<string> = ["aircraft_uuid", "location
   "start_time", "end_time", "color", "title", "description", "allDay"];
 
 export const baseFlightData: string =
-  `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time, end_time, color, title, description, allDay as "allDay",
+  `SELECT FT.flight_uuid, location_uuid, aircraft_uuid, start_time as start, end_time as end, color, title, description, allDay as "allDay",
     COALESCE (array_agg( json_build_object('airman_uuid', FC.account_uuid, 'crew_position_uuid', FC.crew_position_uuid))
       FILTER (WHERE FC.flight_crew_uuid IS NOT NULL), array[]::json[]) as crew_members
     FROM flight FT
