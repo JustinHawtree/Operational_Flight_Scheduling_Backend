@@ -21,6 +21,7 @@ export async function checkJwt(req: Request, res: Response, next: NextFunction) 
 }
 
 export async function checkJwtWebsocket(token: string): Promise<{ error: any, jwtPayload: any }> {
+  if (!token) return {error: "Null or Undefined Token passed to checkJwtWebsocket", jwtPayload: null};
   try {
     let jwtPayload = await decryptToken(token);
     return { error: false, jwtPayload };
