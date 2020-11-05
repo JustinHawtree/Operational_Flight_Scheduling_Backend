@@ -53,7 +53,8 @@ require('uWebSockets.js').App().ws('/*', {
         case "online":
           switch (action) {
             case "join":
-              user_list.push({ first_name: token_payload.jwtPayload.first_name, last_name: token_payload.jwtPayload.last_name });
+
+              user_list.push({ first_name: token_payload.jwtPayload.first_name, last_name: token_payload.jwtPayload.last_name, ws: ws });
               ws.publish('online',
                 JSON.stringify({
                   topic: "online",
@@ -62,6 +63,7 @@ require('uWebSockets.js').App().ws('/*', {
                 }));
               break;
             case "leave":
+
               user_list = user_list.filter((item: any) => {
                 (item.first_name !== token_payload.jwtPayload.first_name && item.last_name !== token_payload.jwtPayload.last_name)
               });
@@ -210,6 +212,13 @@ require('uWebSockets.js').App().ws('/*', {
 
   close: (ws: any, code: any, message: any) => {
     console.log("WebSocket Closed");
+    user_list = user_list.filter((item: any) => item.ws !== ws);
+    ws.publish('online',
+    JSON.stringify({
+      topic: "online",
+      action: "online",
+      message: user_list
+    }));
   }
 
 }).listen(3002, (listenSocket: any) => {
