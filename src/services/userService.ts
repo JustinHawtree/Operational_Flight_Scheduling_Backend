@@ -185,7 +185,7 @@ export const approveUsers = async (account_uuids: Array<string>): Promise<{ erro
   sql += ")";
 
   try {
-    client = await pool.conenct();
+    client = await pool.connect();
     sqlResult = await client.query(sql, valuesArray);
     client.release();
   } catch (error) {
