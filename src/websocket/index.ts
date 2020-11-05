@@ -4,7 +4,9 @@ import aircraftModelHandler from "./handlers/aircraftModelHandler";
 import crewPositionHandler from "./handlers/crewPositionHandler";
 import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
-import { parse } from "dotenv/types";
+import { checkJwtWebsocket } from "../middlewares/checkJwt";
+
+let user_list: any = [];
 
 require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
@@ -17,16 +19,21 @@ require('uWebSockets.js').App().ws('/*', {
     console.log("A Websocket connected!");
     ws.subscribe('location');
     ws.subscribe('flight');
+    ws.subscribe('flight_crew');
+    ws.subscribe('crew_position');
+    ws.subscribe('aircraft');
+    ws.subscribe('aircraft_model');
+    ws.subscribe('online');
   },
 
-  message: (ws: any, wsmessage: any, isBinary: any) => {
+  message: async (ws: any, wsmessage: any, isBinary: any) => {
     let stringy = "";
     try {
       let buffer = Buffer.from(wsmessage);
       stringy = buffer.toString();
       let parsedMessage = JSON.parse(stringy);
-      console.log("Websocket Message:",parsedMessage);
-      
+      console.log("Websocket Message:", parsedMessage);
+
       let token = parsedMessage.token;
       let error = parsedMessage.error;
 
@@ -35,6 +42,7 @@ require('uWebSockets.js').App().ws('/*', {
       let action = parsedMessage.action;
       let message = parsedMessage.message;
       // decrypt the token
+      let token_payload = await checkJwtWebsocket(token);
 
       // Down below ensure the request is from an admin
       // for changes like in the users account
@@ -42,14 +50,33 @@ require('uWebSockets.js').App().ws('/*', {
 
 
       switch (topic) {
-        case "user":
-          // userHandler(action, message, (error: any, response: any) => {
-          //   if (error) {
-          //     ws.send('error', error);
-          //     return;
-          //   }
-          //   ws.publish('user', response);
-          // });
+        case "online":
+          switch (action) {
+            case "join":
+              user_list.push({ first_name: token_payload.jwtPayload.first_name, last_name: token_payload.jwtPayload.last_name });
+              ws.publish('online',
+                JSON.stringify({
+                  topic: "online",
+                  action: "online",
+                  message: user_list
+                }));
+              break;
+            case "leave":
+              user_list = user_list.filter((item: any) => {
+                (item.first_name !== token_payload.jwtPayload.first_name && item.last_name !== token_payload.jwtPayload.last_name)
+              });
+              ws.publish('online',
+                JSON.stringify({
+                  topic: "online",
+                  action: "online",
+                  message: user_list
+                }));
+              break;
+            default:
+              console.log("Not a valid action for Online case");
+              ws.send(JSON.stringify({ error: "Not a valid action for Online case" }));
+              break;
+          }
           break;
 
 
@@ -73,7 +100,7 @@ require('uWebSockets.js').App().ws('/*', {
           flightHandler(action, message, (error: any, response: any) => {
             if (error) {
               console.log("Websocket Error: Flight Error:", error);
-              ws.send(JSON.stringify({error: "Flight Error"}));
+              ws.send(JSON.stringify({ error: "Flight Error" }));
               return;
             }
             console.log("Got here in flight");
@@ -92,7 +119,7 @@ require('uWebSockets.js').App().ws('/*', {
             console.log("Got Here3");
             if (error) {
               console.log("Websocket Error: Location Error:", error);
-              ws.send(JSON.stringify({error: "Location Error"}));
+              ws.send(JSON.stringify({ error: "Location Error" }));
               return;
             }
             console.log("Got Here4");
@@ -111,7 +138,7 @@ require('uWebSockets.js').App().ws('/*', {
           crewPositionHandler(action, message, (error: any, response: any) => {
             if (error) {
               console.log("Websocket Error: Crew_Position Error:", error);
-              ws.send(JSON.stringify({error: "Crew_Position Error"}));
+              ws.send(JSON.stringify({ error: "Crew_Position Error" }));
               return;
             }
             ws.publish('crew_position',
@@ -128,7 +155,7 @@ require('uWebSockets.js').App().ws('/*', {
           aircraftHandler(action, message, (error: any, response: any) => {
             if (error) {
               console.log("Websocket Error: Aircraft Error:", error);
-              ws.send(JSON.stringify({error: "Aircraft Error"}));
+              ws.send(JSON.stringify({ error: "Aircraft Error" }));
               return;
             }
             ws.publish('aircraft',
@@ -145,7 +172,7 @@ require('uWebSockets.js').App().ws('/*', {
           aircraftModelHandler(action, message, (error: any, response: any) => {
             if (error) {
               console.log("Websocket Error: Aircraft Model Error:", error);
-              ws.send(JSON.stringify({error: "Aircraft Modal  Error"}));
+              ws.send(JSON.stringify({ error: "Aircraft Modal  Error" }));
               return;
             }
             ws.publish('aircraft_model',
@@ -163,10 +190,10 @@ require('uWebSockets.js').App().ws('/*', {
           console.log("pong", date);
           break;
 
-          
+
         default:
           console.log("Websocket Error: Invalid Topic Error: Topic Given:", topic);
-          ws.send(JSON.stringify({error: "Invalid Topic Error:"}));
+          ws.send(JSON.stringify({ error: "Invalid Topic Error:" }));
           break;
       }
       // console.log("Message: ", message);
