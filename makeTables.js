@@ -242,8 +242,8 @@ const preparedSQL = [
       flight_uuid UUID DEFAULT uuid_generate_v4(),
       aircraft_uuid UUID,
       location_uuid UUID,
-      start TIMESTAMP NOT NULL,
-      end TIMESTAMP NOT NULL,
+      start_time TIMESTAMP NOT NULL,
+      end_time TIMESTAMP NOT NULL,
       color VARCHAR(30) NOT NULL,
       title VARCHAR(50) NOT NULL,
       description VARCHAR(200),
@@ -253,7 +253,7 @@ const preparedSQL = [
       FOREIGN KEY (location_uuid) REFERENCES location (location_uuid)
   );`,
 
-  `INSERT INTO flight (flight_uuid, aircraft_uuid, location_uuid, start, end, color, title, description, allDay)
+  `INSERT INTO flight (flight_uuid, aircraft_uuid, location_uuid, start_time, end_time, color, title, description, allDay)
       VALUES ('0bf6a55d-a5e7-4835-8d90-3a6bdd4f07d6', '63c6821a-fb98-418b-9336-c60beb837708', '96017add-cf3d-4075-b09b-7fd9ad690e04', '${moment().utc().format()}', '${moment().utc().add(4, 'h').format()}', '#eb8334', 'Mock Flight', 'Mock Flight testing backend', FALSE),
              ('e74aa81e-e861-4329-823c-0c646c3f3a38', '5a3db7a6-ffea-427d-8093-4c2d26392fb8', 'ea703189-31ea-4235-bdbb-b017731fb29c', '${moment().utc().add(2, 'h').format()}', '${moment().utc().add(6, 'h').format()}', '#eb8334', 'Mock Flight 2', 'Mock Flight testing backend 2', FALSE);`,
 
