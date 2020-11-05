@@ -16,7 +16,7 @@ require('uWebSockets.js').App().ws('/*', {
   compression: 0,
 
   open: (ws: any, req: any) => {
-    console.log("A Websocket connected!");
+    console.log("A Websocket connected! WS:", ws);
     ws.subscribe('location');
     ws.subscribe('flight');
     ws.subscribe('flight_crew');
