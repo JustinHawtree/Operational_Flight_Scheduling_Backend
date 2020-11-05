@@ -39,7 +39,7 @@ export const getAllFlights = async (): Promise<Array<Flight>> => {
 
 export const getAllFlightsBetweenTimes = async (start_date: Date, end_date: Date): Promise<Array<Flight>> => {
   let client: any = null;
-  const SQL: string = baseFlightData + `WHERE FT.end > $1 OR FT.start < $2 ` + flightGroupBy;
+  const SQL: string = baseFlightData + `WHERE FT.end_time > $1 OR FT.start_time < $2 ` + flightGroupBy;
   let sqlResult: any = null;
 
   try {
@@ -56,9 +56,9 @@ export const getAllFlightsBetweenTimes = async (start_date: Date, end_date: Date
 
 export const createFlight = async (flight: Flight): Promise<{ error: any, newFlightUUID: string }> => {
   let client: any = null;
-  const SQL = `INSERT INTO flight (aircraft_uuid, location_uuid, start, end, color, title, description, allDay)
+  const SQL = `INSERT INTO flight (aircraft_uuid, location_uuid, start_time, end_time, color, title, description, allDay)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING flight_uuid`;
-  const values = [flight.aircraft_uuid, flight.location_uuid, flight.start, flight.end, flight.color, flight.title, flight.description, flight.allDay];
+  const values = [flight.aircraft_uuid, flight.location_uuid, flight.start_time, flight.end_time, flight.color, flight.title, flight.description, flight.allDay];
   let sqlResult: any = null;
 
   try {

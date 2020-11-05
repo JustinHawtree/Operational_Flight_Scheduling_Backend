@@ -12,8 +12,8 @@ const flightHandler = async (action: string, payload: { [key: string]: any }, ca
           flight_uuid: "",
           aircraft_uuid: payload.aircraft_uuid,
           location_uuid: payload.location_uuid,
-          start: payload.start,
-          end: payload.end,
+          start_time: payload.start_time,
+          end_time: payload.end_time,
           color: payload.color,
           title: payload.title,
           description: payload.description,
@@ -29,8 +29,13 @@ const flightHandler = async (action: string, payload: { [key: string]: any }, ca
             callback(crewResult.error, { success: false });
           }
         }
+        let returnFlight: any = { ...flight, flight_uuid: newFlight.newFlightUUID, crew_members: payload.crew_members };
+        let start = payload.start_time;
+        let end = payload.end_time;
+        delete returnFlight["start_time"];
+        delete returnFlight["end_time"];
 
-        callback(false, { ...flight, flight_uuid: newFlight.newFlightUUID, crew_members: payload.crew_members });
+        callback(false, {...returnFlight, end, start});
 
       } catch (error) {
         console.error("Websocket Flight add error:", error);
@@ -67,7 +72,16 @@ const flightHandler = async (action: string, payload: { [key: string]: any }, ca
             callback(crewResult.error, { success: false });
           }
         }
-        callback(false, { ...updateProps, flight_uuid: payload.flight_uuid, crew_members: payload.crew_members });
+
+        let returnFlight: any = { ...updateProps, flight_uuid: payload.flight_uuid, crew_members: payload.crew_members };
+        let start = payload.start_time;
+        let end = payload.end_time;
+        delete returnFlight["start_time"];
+        delete returnFlight["end_time"];
+
+        callback(false, {...returnFlight, end, start});
+
+      
       } catch (error) {
         console.log("Websocket Flight edit error:", error);
         callback("Websocket Flight edit error: " + error, null);
