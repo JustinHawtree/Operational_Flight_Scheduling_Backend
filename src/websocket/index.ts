@@ -10,7 +10,7 @@ require('uWebSockets.js').App().ws('/*', {
   // Websocket Settings
   idleTimeout: 60, // Author of ws library hard codes the timeout to 1 min
   maxBackpressure: 1024,
-  maxPayloadLength: 512,
+  maxPayloadLength: 16 * 1024 * 1024,
   compression: 0,
 
   open: (ws: any, req: any) => {
