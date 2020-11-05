@@ -16,6 +16,7 @@ require('uWebSockets.js').App().ws('/*', {
   open: (ws: any, req: any) => {
     console.log("A Websocket connected!");
     ws.subscribe('location');
+    ws.subscribe('flight');
   },
 
   message: (ws: any, wsmessage: any, isBinary: any) => {
@@ -75,6 +76,7 @@ require('uWebSockets.js').App().ws('/*', {
               ws.send(JSON.stringify({error: "Flight Error"}));
               return;
             }
+            console.log("Got here in flight");
             ws.publish('flight',
               JSON.stringify({
                 topic: "flight",
