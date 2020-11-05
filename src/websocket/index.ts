@@ -5,17 +5,18 @@ import crewPositionHandler from "./handlers/crewPositionHandler";
 import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
 import { checkJwtWebsocket } from "../middlewares/checkJwt";
+import uWS from "uWebSockets.js";
 
 let user_list: any = [];
 
-require('uWebSockets.js').App().ws('/*', {
+export const app = uWS.App().ws('/*', {
   // Websocket Settings
   idleTimeout: 60, // Author of ws library hard codes the timeout to 1 min
   maxBackpressure: 1024,
   maxPayloadLength: 16 * 1024 * 1024,
   compression: 0,
 
-  open: (ws: any, req: any) => {
+  open: (ws: any) => {
     console.log("A Websocket connected! WS:", ws);
     ws.subscribe('location');
     ws.subscribe('flight');
@@ -213,7 +214,7 @@ require('uWebSockets.js').App().ws('/*', {
   close: (ws: any, code: any, message: any) => {
     console.log("WebSocket Closed");
     user_list = user_list.filter((item: any) => item.ws !== ws);
-    ws.publish('online',
+    app.publish('online',
     JSON.stringify({
       topic: "online",
       action: "online",
