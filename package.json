@@ -5,21 +5,20 @@
   "main": "index.js",
   "author": "SDTeam",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "build": "yarn tsc -p . && cp ./.env ./build/services && cp ./src/util/private.key ./build/util && cp ./src/util/public.key ./build/util",
     "start": "node ./build/server.js",
     "go": "yarn build && yarn start",
-    "test": "mocha -r ts-node/register 'test/**/*.ts'"
-
+    "test": "mocha -r ts-node/register 'src/test/**/*.ts'"
   },
   "dependencies": {
     "bcrypt": "^4.0.1",
+    "common.js": "^1.1.1",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
-    "moment": "^2.27.0",
+    "moment": "^2.29.1",
     "pg": "^8.2.1",
     "uWebSockets.js": "uNetworking/uWebSockets.js#v18.8.0",
     "validator": "^13.1.1"
