@@ -33,7 +33,7 @@ describe('#getAircraftModel()', async function() {
         expect(await AircraftModelService.getAircraftModel(testModel.model_uuid)).to.be.an('Object').that.has.property('model_name').that.equals(testModel.model_name);
     })
 
-    //Moody Air Force Base specific aircraft models
+    /* //Moody Air Force Base specific aircraft models
     it('should return an Object with model_name A-10C Thunderbolt Ⅱ', async function() {
         expect(await AircraftModelService.getAircraftModel('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b')).to.be.an('Object').that.has.property('model_name').that.equals('A-10C Thunderbolt Ⅱ');
     })
@@ -45,29 +45,20 @@ describe('#getAircraftModel()', async function() {
     it('should return an Object with model_name HH-60 Pave Hawk', async function() {
         expect(await AircraftModelService.getAircraftModel('db2863ea-369e-4262-ad17-bda986ae9632')).to.be.an('Object').that.has.property('model_name').that.equals('HH-60 Pave Hawk');
     })
+    */
 })
 
 
 
 /*
 describe('#updateAircraftModel()', async function() {
-    //Check to see if model_name is updated
-     
+    //Check to see if model_name is updated   
  
 })
 
 
 describe('#replaceAircraftModel()', async function() {
-    it('should replace Test Model with Test Model 2 in the database', async function(){ 
-        //Create new model to replace Test Model, hard-coded uuid for testing purposes: 61f2c224-23be-11eb-adc1-0242ac120002
-        let replacementModelName : string = "Test Model 2";
-        let replacementModel : AircraftModel = {model_uuid: '61f2c224-23be-11eb-adc1-0242ac120002', model_name: replacementModelName};
 
-        await AircraftModelService.replaceAircraftModel(testModel.model_uuid, replacementModel);
-
-        //Check if model was replaced
-        expect(await AircraftModelService.getAircraftModel('61f2c224-23be-11eb-adc1-0242ac120002')).to.be.an('Object').that.has.property('model_name').that.equals(replacementModelName);
-    })
 })
 */
 

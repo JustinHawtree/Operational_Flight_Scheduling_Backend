@@ -50,7 +50,7 @@ export const createAircraftModel = async (aircraft_model: AircraftModel): Promis
     if (client) client.release();
     throw new Error("Create Aircraft Model Error :"+error);
   }
-  console.log("SQLResult for Creating Aircraft Model:", sqlResult);
+  //console.log("SQLResult for Creating Aircraft Model:", sqlResult);
 
   return {error: false, newAircraftModelUUID: sqlResult.rows[0].model_uuid}
 }
