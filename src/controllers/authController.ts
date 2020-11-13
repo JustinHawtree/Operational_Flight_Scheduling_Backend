@@ -21,7 +21,7 @@ export default class AuthController {
     } catch (error) {
       console.error("Login Error: User", req.body.email, "tried to log in, with Error:", error.message);
       if (error.message.includes("not approved")) {
-        return res.send({error: "User is not approved"});
+        return res.send({error: "User is not approved"}).status(400);
       }
       return res.sendStatus(400);
     }
