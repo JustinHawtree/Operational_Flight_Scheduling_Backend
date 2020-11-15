@@ -64,9 +64,13 @@ const flightHandler = async (action: string, payload: { [key: string]: any }, ca
           callback(result.error, null);
           break;
         }
+        console.log("Crew members?:", payload.crew_members);
         if (payload.crew_members && payload.crew_members.length > 0) {
+	  console.log("Got inside here", payload.crew_members);
           let deleteCrewResult = await flightCrewService.removeAllFlightCrewsByFlight(payload.flight_uuid);
+	  console.log("Delete Crews:", deleteCrewResult);
           let crewResult = await flightCrewService.createFlightCrewsByFlight(payload.flight_uuid, payload.crew_members);
+	  console.log("crewResult:", crewResult);
           if (crewResult.error) {
             console.error("Create Flight Crew Members Error:", crewResult.error);
             callback(crewResult.error, { success: false });
