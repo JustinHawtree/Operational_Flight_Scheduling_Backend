@@ -33,7 +33,7 @@ describe('#getAircraftModel()', async function() {
         expect(await AircraftModelService.getAircraftModel(testModel.model_uuid)).to.be.an('Object').that.has.property('model_name').that.equals(testModel.model_name);
     })
 
-    /* //Moody Air Force Base specific aircraft models
+    /* //Moody Air Force Base specific aircraft models*/
     it('should return an Object with model_name A-10C Thunderbolt Ⅱ', async function() {
         expect(await AircraftModelService.getAircraftModel('b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b')).to.be.an('Object').that.has.property('model_name').that.equals('A-10C Thunderbolt Ⅱ');
     })
@@ -45,7 +45,7 @@ describe('#getAircraftModel()', async function() {
     it('should return an Object with model_name HH-60 Pave Hawk', async function() {
         expect(await AircraftModelService.getAircraftModel('db2863ea-369e-4262-ad17-bda986ae9632')).to.be.an('Object').that.has.property('model_name').that.equals('HH-60 Pave Hawk');
     })
-    */
+    
 })
 
 
@@ -69,6 +69,8 @@ describe('#removeAircraftModel()', async function() {
         //Check if model was deleted
         expect(await AircraftModelService.removeAircraftModel(testModel.model_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
     })  
+
+    //add get
 
     it('should return \'No row deleted\' because Test Model has already been deleted', async function() {
         //Check if model was deleted
