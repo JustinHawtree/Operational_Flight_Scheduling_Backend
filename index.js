@@ -228,7 +228,7 @@ app.post('/login', async (req, res) => {
     
     dbClient = await pool.connect();
     
-    const sql = `SELECT password, accepted, role, account_uuid FROM account WHERE email = $1`;
+    const sql = `SELECT password, accepted, role, account_uuid, first_name, last_name FROM account WHERE email = $1`;
 
     const result = await dbClient.query(sql, [req.body.email]);
     dbClient.release();
@@ -260,7 +260,9 @@ app.post('/login', async (req, res) => {
         access_token_created: tokenDate,
         access_token_expires_in: expires_in,
         role: result.rows[0].role,
-        email: req.body.email
+        email: req.body.email,
+	first_name: result.rows[0].first_name,
+	last_name: result.rows[0].last_name,
       }
     );
   

@@ -58,7 +58,7 @@ export const createAircraft = async (aircraft: Aircraft): Promise<{ error: any, 
     if (client) client.release();
     throw new Error("Create Aircraft Error :"+error);
   }
-  console.log("SQLResult for Creating Aircraft:", sqlResult);
+  //console.log("SQLResult for Creating Aircraft:", sqlResult);
 
   return {error: false, newAircraftUUID: sqlResult.rows[0].aircraft_uuid}
 }

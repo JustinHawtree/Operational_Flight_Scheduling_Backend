@@ -50,7 +50,7 @@ export const createCrewPosition = async (crewPosition: CrewPosition): Promise<{ 
     if (client) client.release();
     throw new Error("Create Crew Position Error :"+error);
   }
-  console.log("SQLResult for Creating Crew Position:", sqlResult);
+  //console.log("SQLResult for Creating Crew Position:", sqlResult);
 
   return {error: false, newCrewPositionUUID: sqlResult.rows[0].crew_position_uuid}
 }

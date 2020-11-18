@@ -231,10 +231,10 @@ const preparedSQL = [
   );`,
 
   `INSERT INTO location (location_uuid, location_name, track_num)
-      VALUES ('96017add-cf3d-4075-b09b-7fd9ad690e04', 'Fort Mooty', 420),
-             ('ea703189-31ea-4235-bdbb-b017731fb29c', 'Mooty 1', 724),
-             ('40ba35ba-92a9-4255-8960-e47b83df1cd0', 'Mooty 2', 725),
-             ('a88796b2-9613-48d4-833f-77564e6e89a5', 'Mooty 3', 726);`,
+      VALUES ('96017add-cf3d-4075-b09b-7fd9ad690e04', 'Fort Moody', 420),
+             ('ea703189-31ea-4235-bdbb-b017731fb29c', 'Moody 1', 724),
+             ('40ba35ba-92a9-4255-8960-e47b83df1cd0', 'Moody 2', 725),
+             ('a88796b2-9613-48d4-833f-77564e6e89a5', 'Moody 3', 726);`,
 
 
 
