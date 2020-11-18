@@ -12,12 +12,12 @@ describe('#signUpUser()', async function() {
 
     //Should return no error when adding a new user
     it('should return an Object with property \'error\' that has the value false', async function(){
-        expect(await authService.signUpUser('test@home.com', 'test', 'test', 'test')).to.be.an('Object').that.has.property('error').that.equals(false);   
+        expect(await authService.signUpUser('test@home.com', 'test', 'Test', 'User')).to.be.an('Object').that.has.property('error').that.equals(false);   
     })
 
     //Should return 'Email already in use' message when attempting to add the same user again
     it('should return \'Email already in use\' message when attempting to add the same user again', async function(){
-        expect(await authService.signUpUser('test@home.com', 'test', 'test', 'test')).to.be.an('Object').that.has.property('error').that.equals('Email is already in use.');
+        expect(await authService.signUpUser('test@home.com', 'test', 'Test', 'User')).to.be.an('Object').that.has.property('error').that.equals('Email is already in use.');
     })
     
 })
