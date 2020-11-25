@@ -151,7 +151,7 @@ export const removeFlight = async (flight_uuid: string): Promise<{ error: any }>
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Delete Flight Error from SQL Query erorr: "+error);
+    throw new Error("Delete Flight Error from SQL Query error: "+error);
   }
 
   if (sqlResult.rowCount <= 0) {
