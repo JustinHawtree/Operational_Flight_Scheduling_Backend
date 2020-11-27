@@ -39,7 +39,7 @@ export const getAllFlightCrews = async (): Promise<Array<FlightCrew>> => {
 
 export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error: any, newFlightCrewUUID: string }> => {
   let client: any = null;
-  const SQL = `INSERT INTO flight (flight_uuid, account_uuid, crew_position_uuid)
+  const SQL = `INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid)
                 VALUES ($1, $2, $3) RETURNING flight_crew_uuid`;
   const values = [flightCrew.flight_uuid, flightCrew.account_uuid, flightCrew.crew_position_uuid];
   let sqlResult: any = null;
@@ -47,6 +47,7 @@ export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error:
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
+    client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Create Flight Crew Error :"+error);

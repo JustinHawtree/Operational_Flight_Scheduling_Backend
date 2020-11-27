@@ -64,6 +64,7 @@ export const createFlight = async (flight: Flight): Promise<{ error: any, newFli
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
+    client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Create Flight Error :"+error);
