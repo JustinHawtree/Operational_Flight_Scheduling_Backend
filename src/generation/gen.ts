@@ -1,5 +1,5 @@
-const POPULATION_SIZE: number = 400;
-const MAX_FLIGHTS: number = 24;
+const POPULATION_SIZE: number = 200;
+const MAX_FLIGHTS: number = 25;
 
 let avaliable_genes: Array<Array<number>> = [
   Array.from({length:11}, (_,i) => i + 1),
@@ -7,8 +7,8 @@ let avaliable_genes: Array<Array<number>> = [
   Array.from({length:48}, (_,i) => i + 1)
 ];
 
-const schedule_start: Date = new Date(2020, 11, 16);
-const schedule_end: Date = new Date(2020, 11, 20, 20);
+const schedule_start: Date = new Date(2020, 10, 16);
+const schedule_end: Date = new Date(2020, 10, 20, 20);
 
 function sample(array: Array<any>): any {
   return array[~~(Math.random() * array.length)]
@@ -105,7 +105,7 @@ class Schedule {
 
       chromosome_times.forEach(([start2, end2], i) => {
         if (Math.max(start1.getTime(), start2.getTime()) < Math.min(end1.getTime(), end2.getTime())) {
-          fitness += 5;
+          fitness += 10;
         }
       });
 
@@ -154,7 +154,6 @@ function main(): void {
 
   while (!found) {
     population.sort((a, b) => a.fitness - b.fitness);
-
     let peak: number = population[0].fitness;
     let peak_count: number = 0;
 
@@ -163,7 +162,7 @@ function main(): void {
     });
     let sorted_apex: any = population[0];
     sorted_apex.gnome.sort((a:any, b:any) => ((a[0] < b[0]) ? -1 : ((a[0] > b[0]) ? 1 : 0)));
-    console.log("Generation", generation, " Fitness", population[0].fitness, sorted_apex.printChromosome());
+    console.log("Generation", generation, " Fitness", population[0].fitness,"\n", sorted_apex.printChromosome());
 
 
     if (population[0].fitness <= 0) {
