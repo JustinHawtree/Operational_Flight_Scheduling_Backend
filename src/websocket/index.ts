@@ -194,6 +194,11 @@ export const app = uWS.App().ws('/*', {
           break;
 
 
+        case "generation":
+          console.log("Generation websocket called!");
+          break; 
+
+
         default:
           console.log("Websocket Error: Invalid Topic Error: Topic Given:", topic);
           ws.send(JSON.stringify({ error: "Invalid Topic Error:" }));
