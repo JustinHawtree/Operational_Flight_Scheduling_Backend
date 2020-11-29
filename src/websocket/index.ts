@@ -5,6 +5,7 @@ import crewPositionHandler from "./handlers/crewPositionHandler";
 import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
 import airmanHandler from "./handlers/airmanHandler";
+import generationHandler from "./handlers/generationHandler";
 import { checkJwtWebsocket } from "../middlewares/checkJwt";
 import uWS from "uWebSockets.js";
 
@@ -183,6 +184,7 @@ export const app = uWS.App().ws('/*', {
               ws.send(JSON.stringify({ error: "Airman Error" }));
               return;
             }
+            console.log("Going to send Response for aiman:", response);
             ws.publish('airman',
               JSON.stringify({
                 topic: "airman",
@@ -219,6 +221,13 @@ export const app = uWS.App().ws('/*', {
         case "generation":
           console.log("Generation websocket called!");
           console.log("Generation Sending back!");
+          generationHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              console.log("Websocket Error: Generation Error:", error);
+              ws.send(JSON.stringify({ error: "Generation Error" }));
+              return;
+            }
+          })
           ws.send(JSON.stringify({topic: "generation", action: "generate", message: "New Generation!"}));
           break; 
 

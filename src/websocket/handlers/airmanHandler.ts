@@ -8,6 +8,7 @@ const airmanHandler = async (action: string, payload: { [key: string]: any }, ca
       console.log("Websocket Airman Approve case!");
       try {
         let airmenUUIDs = payload.users;
+        console.log("Payload Users:", payload.users);
 
         await UserService.approveUsers(airmenUUIDs);
 
@@ -15,7 +16,7 @@ const airmanHandler = async (action: string, payload: { [key: string]: any }, ca
         for (const airman_uuid of airmenUUIDs) {
           approved_users.push(UserService.getUser(airman_uuid));
         }
-
+        console.log("Approved Users List:", approved_users);
         callback(false, {airmen: approved_users});
 
       } catch (error) {
