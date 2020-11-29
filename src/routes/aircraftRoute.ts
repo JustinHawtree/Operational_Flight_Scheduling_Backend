@@ -5,6 +5,9 @@ import { checkRole } from "../middlewares/checkRole";
 
 const router = Router();
 
+// Get all avaliable aircrafts
+router.get("/avaliable", [checkJwt, checkRole(["Admin", "Scheduler"])], AircraftController.getAllAvaliableAircrafts);
+
 // Get one aircraft
 router.get("/:uuid", [checkJwt, checkRole(["Admin", "Scheduler"])], AircraftController.getOneByUUID);
 

@@ -8,13 +8,14 @@ export default interface User {
   rank_uuid: string;
   pilot_status: string;
   role: string;
-  user_status: string; 
+  user_status: string;
+  meta_position_status: string; 
   created_on?: string;
   last_login?: string;
 }
 
 export const validUserUpdateProps: Array<string> = ["first_name", "last_name", "accepted", "rank_uuid",
-  "pilot_status", "role", "user_status", "created_on", "last_login"];
+  "pilot_status", "role", "user_status", "meta_position_status", "created_on", "last_login"];
 
 export const baseUserData: string = `SELECT account_uuid, first_name, last_name, rank_uuid, accepted, pilot_status,
- role, user_status FROM account `;
+ role, user_status, meta_position_status FROM account `;

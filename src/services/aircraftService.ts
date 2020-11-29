@@ -20,6 +20,23 @@ export const getAircraft = async (aircraft_uuid: string): Promise<Aircraft> => {
 }
 
 
+export const getAllAvaliableAircrafts = async (): Promise<Array<Aircraft>> => {
+  let client: any = null;
+  const SQL: string = baseAircraftData + "WHERE status = 'Available'";
+  let sqlResult: any = null;
+
+  try {
+    client = await pool.connect();
+    sqlResult = await client.query(SQL);
+    client.release();
+  } catch (error) {
+    if (client) client.release();
+    throw new Error("Get All Avaliable Aircrafts Error "+error);
+  }
+  return sqlResult.rows;
+}
+
+
 export const getAllAircrafts = async (): Promise<Array<Aircraft>> => {
   let client: any = null;
   const SQL: string = baseAircraftData;

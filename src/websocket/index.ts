@@ -4,6 +4,7 @@ import aircraftModelHandler from "./handlers/aircraftModelHandler";
 import crewPositionHandler from "./handlers/crewPositionHandler";
 import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
+import airmanHandler from "./handlers/airmanHandler";
 import { checkJwtWebsocket } from "../middlewares/checkJwt";
 import uWS from "uWebSockets.js";
 
@@ -18,6 +19,7 @@ export const app = uWS.App().ws('/*', {
 
   open: (ws: any) => {
     console.log("A Websocket connected! WS:", ws);
+    // TODO: only subscribe certain permissions levels to certain websocket messages
     ws.subscribe('location');
     ws.subscribe('flight');
     ws.subscribe('flight_crew');
@@ -25,6 +27,7 @@ export const app = uWS.App().ws('/*', {
     ws.subscribe('aircraft');
     ws.subscribe('aircraft_model');
     ws.subscribe('online');
+    ws.subscribe('airman');
   },
 
   message: async (ws: any, wsmessage: any, isBinary: any) => {
@@ -51,10 +54,11 @@ export const app = uWS.App().ws('/*', {
 
 
       switch (topic) {
+
         case "online":
+
           switch (action) {
             case "join":
-
               user_list.push({ first_name: token_payload.jwtPayload.first_name, last_name: token_payload.jwtPayload.last_name, ws: ws });
               ws.publish('online',
                 JSON.stringify({
@@ -63,8 +67,8 @@ export const app = uWS.App().ws('/*', {
                   message: user_list
                 }));
               break;
-            case "leave":
 
+            case "leave":
               user_list = user_list.filter((item: any) => {
                 (item.first_name !== token_payload.jwtPayload.first_name && item.last_name !== token_payload.jwtPayload.last_name)
               });
@@ -75,6 +79,7 @@ export const app = uWS.App().ws('/*', {
                   message: user_list
                 }));
               break;
+
             default:
               console.log("Not a valid action for Online case");
               ws.send(JSON.stringify({ error: "Not a valid action for Online case" }));
@@ -164,6 +169,23 @@ export const app = uWS.App().ws('/*', {
             ws.publish('aircraft',
               JSON.stringify({
                 topic: "aicraft",
+                action: action,
+                message: response
+              }));
+          });
+          break;
+
+        
+        case "airman":
+          airmanHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              console.log("Websocket Error: Airman Error:", error);
+              ws.send(JSON.stringify({ error: "Airman Error" }));
+              return;
+            }
+            ws.publish('airman',
+              JSON.stringify({
+                topic: "airman",
                 action: action,
                 message: response
               }));

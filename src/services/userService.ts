@@ -5,8 +5,8 @@ import validator from "validator";
 
 
 const makeUserObject = (account_uuid: string, email: string, first_name: string, last_name: string, accepted: boolean,
-  rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
-    return { account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status };
+  rank_uuid: string, pilot_status: string, role: string, user_status: string, meta_position_status: string): User => {
+    return { account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status, meta_position_status };
   }
 
 
@@ -44,7 +44,7 @@ export const getAllUsers = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }
@@ -67,7 +67,7 @@ export const getNonApprovedUsers = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }
@@ -90,7 +90,7 @@ export const getPilots = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }

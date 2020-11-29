@@ -1,5 +1,12 @@
+import * as AircraftService from "../services/aircraftService";
+import Aircraft from "../models/aircraftInterface";
+import * as AircraftModelService from "../services/aircraftModelService";
+import AircraftModel from "../models/aircraftModelInterface";
+import * as CrewPositionService from "../services/crewPositionService";
+import CrewPosition from "../models/crewPositionInterface";
+
 const POPULATION_SIZE: number = 200;
-const MAX_FLIGHTS: number = 25;
+const MAX_FLIGHTS: number = 23;
 
 let avaliable_genes: Array<Array<number>> = [
   Array.from({length:11}, (_,i) => i + 1),
@@ -26,6 +33,7 @@ function getMinutesBetweenDates(startDate: Date, endDate: Date) {
 function zip(a: Array<any>, b: Array<any>): Array<any> {
   return a.map((k, i) => [k, b[i]]);
 }
+
 
 class Schedule {
   gnome: any;
@@ -142,7 +150,15 @@ class Schedule {
 }
 
 
-function main(): void {
+async function generate_schedule(): Promise<any> {
+  const aircrafts: Array<Aircraft> = await AircraftService.getAllAvaliableAircrafts();
+  const aircraft_models: Array<AircraftModel> = await AircraftModelService.getAllAircraftModels();
+  const crew_positions: Array<CrewPosition> = await CrewPositionService.getAllCrewPositions();
+  console.log("Aircrafts:", aircrafts);
+  console.log("Aircraft Models", aircraft_models);
+  console.log("Crew_positions", crew_positions);
+  return 1;
+
   let generation: number = 1;
 
   let found: boolean = false;
@@ -167,6 +183,7 @@ function main(): void {
 
     if (population[0].fitness <= 0) {
       found = true;
+      return {schedule: population[0], generation: generation};
       break;
     }
 
@@ -197,7 +214,13 @@ function main(): void {
     generation += 1;
 
   }
-  console.log("Done! Generation", generation, " Fitness", population[0].fitness, population[0].printChromosome());
 }
 
-main();
+async function generate_tester() {
+  let new_schedule = await generate_schedule();
+  console.log("Tester!");
+  return;
+  console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
+}
+
+generate_tester();

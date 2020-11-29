@@ -6,7 +6,7 @@
   "author": "SDTeam",
   "license": "MIT",
   "scripts": {
-    "build": "yarn tsc -p . && cp ./.env ./build/services && cp ./src/util/private.key ./build/util && cp ./src/util/public.key ./build/util",
+    "build": "yarn tsc -p . && cp ./.env ./build/services && cp ./.env ./build/generation && cp ./src/util/private.key ./build/util && cp ./src/util/public.key ./build/util",
     "start": "node ./build/server.js",
     "go": "yarn build && yarn start",
     "test": "mocha -r ts-node/register 'src/test/**/*.ts'"
