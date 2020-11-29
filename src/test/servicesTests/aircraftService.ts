@@ -1,17 +1,18 @@
 /* test aircraftService */
 
-import * as AircraftController from "../controllers/aircraftController";
-import * as AircraftService from "../services/aircraftService";
-import Aircraft, { validAircraftUpdateProps, baseAircraftData } from "../models/aircraftInterface";
+import * as AircraftController from "../../controllers/aircraftController";
+import * as AircraftService from "../../services/aircraftService";
+import Aircraft, { validAircraftUpdateProps, baseAircraftData } from "../../models/aircraftInterface";
 
-import * as AircraftModelController from "../controllers/aircraftModelController";
-import * as AircraftModelService from "../services/aircraftModelService";
-import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../models/aircraftModelInterface";
+import * as AircraftModelController from "../../controllers/aircraftModelController";
+import * as AircraftModelService from "../../services/aircraftModelService";
+import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../../models/aircraftModelInterface";
 
 import { expect } from 'chai';
-import { replaceCrewPosition } from "../services/crewPositionService";
+import { replaceCrewPosition } from "../../services/crewPositionService";
 
 var testAircraft : Aircraft;
+var testAircraft2 : Aircraft;
 var testModel : AircraftModel;
 
 describe('#createAircraft()', async function() {
@@ -102,6 +103,44 @@ describe('#replaceAircraft()', async function () {
     })
 })
 
+describe('#getAllAircrafts()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Create another aircraft
+    it('should insert Test Aircraft into the aircraft table', async function() {
+        //Create a model to use for creating a test aircraft
+        let newModelName: string = "Test Aircraft II";
+
+        //Create new aircraft, store the Ojbect returned by createAircraft in resAircraft
+        testAircraft2 = {aircraft_uuid: '', model_uuid: testModel.model_uuid, tail_code: 'MY89114', status: 'Available'};
+        let resAircraft : any = await AircraftService.createAircraft(testAircraft2);
+        testAircraft2.aircraft_uuid = resAircraft.newAircraftUUID;
+
+        //Use the UUID to see if the new aircraft was inserted into the database
+        expect(await AircraftService.getAircraft(testAircraft2.aircraft_uuid)).to.be.an('Object').with.property('model_uuid').that.equals(testModel.model_uuid);
+    })
+
+    //Call getAllAircrafts to see if the function retrieves both aircrafts created during testing
+    it('should return an array of Aircraft that includes both test aircrafts', async function(){
+        let res : any = await AircraftService.getAllAircrafts();
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].aircraft_uuid == testAircraft.aircraft_uuid)
+                contains1 = true;
+            else if(res[i].aircraft_uuid == testAircraft2.aircraft_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
 
 describe('#removeAircraft()', async function() {
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
@@ -109,6 +148,10 @@ describe('#removeAircraft()', async function() {
     //Test to see if Test Aircraft is removed without error
     it('should remove Test Aircraft from the aircraft table', async function() {
         expect(await AircraftService.removeAircraft(testAircraft.aircraft_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
+    })
+
+    it('should remove Test Aircraft II from the aircraft table', async function() {
+        expect(await AircraftService.removeAircraft(testAircraft2.aircraft_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
     })
 
     //Attempt to get the removed aircraft

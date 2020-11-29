@@ -1,11 +1,12 @@
 /* test locationService */
 
-import * as locationController from "../controllers/locationController";
-import * as locationService from "../services/locationService";
-import Location, { baseLocationData, validLocationUpdateProps } from "../models/locationInterface";
+import * as locationController from "../../controllers/locationController";
+import * as locationService from "../../services/locationService";
+import Location, { baseLocationData, validLocationUpdateProps } from "../../models/locationInterface";
 import { expect } from "chai";
 
 var testLocation : Location;
+var testLocation2 : Location;
 
 describe('#createLocation()', async function() {
     this.slow(1000); //This test is slow if it takes longer than 1000 ms
@@ -93,12 +94,55 @@ describe('#replaceLocation()', async function () {
     })
 })
 
+describe('#getAllLocations()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Create another location
+    it('should insert Test Location II into the location table', async function(){
+        let newLocationName : string = "Test Location II";
+
+        //Create a new location, store the Object returned by createLocation in res
+        testLocation2 = {location_uuid: '', location_name: newLocationName, track_num: 122}
+        let res : any = await locationService.createLocation(testLocation2);
+        testLocation2.location_uuid = res.newLocationUUID;
+
+        //We expect res to be an Object that has a property 'newLocationUUID', 
+        //Use the UUID to see if the new location was inserted into the database
+        expect(res).to.be.an('Object').that.has.property('newLocationUUID').that.is.a('string');
+        expect(await locationService.getLocation(res.newLocationUUID)).to.be.an('Object').that.has.property('location_name').that.equals(newLocationName);
+    })
+
+    //Call getAllLocations to see if the function retrieves both locations created during testing
+    it('should return an array of Location the includes both test locations', async function(){
+        let res : any = await locationService.getAllLocations();
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].location_uuid == testLocation.location_uuid)
+                contains1 = true;
+            else if(res[i].location_uuid == testLocation2.location_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
 describe('#removelocation()', async function() {
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
 
     //Test if location is removed without error
     it('should remove Test Location from the location table', async function() {
         expect(await locationService.removeLocation(testLocation.location_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
+    })
+
+    it('should remove Test Location II from the location table', async function() {
+        expect(await locationService.removeLocation(testLocation2.location_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
     })
 
     //Attempt to get the removed location

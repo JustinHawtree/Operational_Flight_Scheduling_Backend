@@ -1,7 +1,7 @@
 /* test authService */
 
-import * as authController from "../controllers/authController";
-import * as authService from "../services/authService";
+import * as authController from "../../controllers/authController";
+import * as authService from "../../services/authService";
 
 import { expect } from 'chai';
 
