@@ -196,6 +196,8 @@ export const app = uWS.App().ws('/*', {
 
         case "generation":
           console.log("Generation websocket called!");
+          console.log("Generation Sending back!");
+          ws.send(JSON.stringify({topic: "generation", action: "generate", message: "New Generation!"}));
           break; 
 
 
