@@ -1,14 +1,14 @@
 /* test flightCrewService */
 
-import FlightCrew, { validFlightCrewUpdateProps, baseFlightCrewData } from "../models/flightCrewInterface";
-import Flight, { validFlightUpdateProps, baseFlightData, flightGroupBy } from "../models/flightInterface";
-import User, { validUserUpdateProps, baseUserData } from "../models/userInterface";
-import CrewPosition from "../models/crewPositionInterface";
+import FlightCrew, { validFlightCrewUpdateProps, baseFlightCrewData } from "../../models/flightCrewInterface";
+import Flight, { validFlightUpdateProps, baseFlightData, flightGroupBy } from "../../models/flightInterface";
+import User, { validUserUpdateProps, baseUserData } from "../../models/userInterface";
+import CrewPosition from "../../models/crewPositionInterface";
 
-import * as flightCrewService from "../services/flightCrewService";
-import * as flightService from "../services/flightService";
-import * as userService from "../services/userService"
-import * as crewPositionService from "../services/crewPositionService"
+import * as flightCrewService from "../../services/flightCrewService";
+import * as flightService from "../../services/flightService";
+import * as userService from "../../services/userService"
+import * as crewPositionService from "../../services/crewPositionService"
 
 import { expect } from 'chai';
 

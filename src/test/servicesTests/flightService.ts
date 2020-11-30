@@ -1,13 +1,16 @@
 /* test flightService */
 
-import * as  flightController from "../controllers/flightController";
-import * as flightService from "../services/flightService";
-import Flight, { validFlightUpdateProps, baseFlightData, flightGroupBy } from "../models/flightInterface";
+import * as  flightController from "../../controllers/flightController";
+import * as flightService from "../../services/flightService";
+import Flight, { validFlightUpdateProps, baseFlightData, flightGroupBy } from "../../models/flightInterface";
 
 import { expect } from 'chai';
 
 var testFlight : Flight;
 var testFlightUUID : any;
+
+var testFlight2 : Flight;
+var testFlight2UUID : any;
 
 describe('#createFlight()', async function() {
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
@@ -98,6 +101,84 @@ describe('#replaceFlight()', async function () {
     })
 })
 
+describe('#getAllFlights()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Create another flight
+    it('should return an Object with the properties error and newFlightUUID', async function(){
+        //Create a new Flight, store the Object returned by createFlight in res
+        //flight_uuid, aircraft_uuid, location_uuid, start_time, end_time, color, title, description, allDay
+        let newFlight : Flight = {flight_uuid: '90f9f461-cf01-4c18-8513-10c6588044e7', aircraft_uuid: '63c6821a-fb98-418b-9336-c60beb837708', location_uuid: '96017add-cf3d-4075-b09b-7fd9ad690e04', start_time: '2020-12-24 12:27:38', end_time: '2020-12-25 16:27:38', color: '#eb8334', title: 'Mock Flight', description: 'Test Flight for backend testing', allDay: false};
+        
+        let res = await flightService.createFlight(newFlight);
+
+        //We expect res to be an Object that has a property 'newFlightUUID', 
+        expect(res).to.be.an('Object').with.property('error').that.equals(false);
+        expect(res).to.have.property('newFlightUUID');
+
+        testFlight2UUID = res.newFlightUUID;
+
+        //Use the UUID to see if the new flight was inserted into the database
+        testFlight2 = await flightService.getFlight(testFlight2UUID);
+        expect(testFlight2).to.be.an('Object').with.property('description').that.equals('Test Flight for backend testing');
+    })
+
+    //Call getAllFlights to see if the function retrieves both flights created during testing
+    it('should return an array of Flight that includes both test aircrafts', async function(){
+        let res : any = await flightService.getAllFlights();
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].flight_uuid == testFlight.flight_uuid)
+                contains1 = true;
+            else if(res[i].flight_uuid == testFlight2.flight_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
+describe('#getAllFlightsBetweenTimes()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Call getAllFlightsBetweenTimes to see if the function retrieves both flights created during testing (both in Dec)
+    it('should return an array of Flight that includes both test flights', async function(){
+        let startDate : Date = new Date('2020-12-01 00:00:00');
+        let endDate : Date = new Date('2021-01-01 00:00:00');
+        let res : any = await flightService.getAllFlightsBetweenTimes(startDate, endDate);
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].flight_uuid == testFlight.flight_uuid)
+                contains1 = true;
+            else if(res[i].flight_uuid == testFlight2.flight_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+
+    //Call getAllFlightsBetweenTimes for time frame we know will contain no flights
+    it('should return an empty array (no flights between these dates)', async function(){
+        let startDate : Date = new Date('2000-12-01 00:00:00');
+        let endDate : Date = new Date('2000-01-01 00:00:00');
+        let res : any = await flightService.getAllFlightsBetweenTimes(startDate, endDate);
+     
+        expect(res).to.be.an('array').that.is.empty;
+    })
+
+})
 
 describe('#removeFlight()', async function(){
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
@@ -105,6 +186,10 @@ describe('#removeFlight()', async function(){
     //Test if flight is removed without error
     it('should remove the test flight from the flight table', async function() {
         expect(await flightService.removeFlight(testFlight.flight_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
+    })
+
+    it('should remove the second test flight from the flight table', async function() {
+        expect(await flightService.removeFlight(testFlight2.flight_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
     })
 
     //Attempt to get the removed flight

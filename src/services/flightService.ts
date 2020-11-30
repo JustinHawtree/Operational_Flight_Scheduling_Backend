@@ -39,7 +39,7 @@ export const getAllFlights = async (): Promise<Array<Flight>> => {
 
 export const getAllFlightsBetweenTimes = async (start_date: Date, end_date: Date): Promise<Array<Flight>> => {
   let client: any = null;
-  const SQL: string = baseFlightData + `WHERE FT.end_time > $1 OR FT.start_time < $2 ` + flightGroupBy;
+  const SQL: string = baseFlightData + `WHERE FT.end_time > $1 AND FT.start_time < $2 ` + flightGroupBy;
   let sqlResult: any = null;
 
   try {

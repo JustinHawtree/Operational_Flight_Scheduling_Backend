@@ -1,12 +1,13 @@
 /* test aircraftModelService */
 
-import * as AircraftModelController from "../controllers/aircraftModelController";
-import * as AircraftModelService from "../services/aircraftModelService";
-import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../models/aircraftModelInterface";
+import * as AircraftModelController from "../../controllers/aircraftModelController";
+import * as AircraftModelService from "../../services/aircraftModelService";
+import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../../models/aircraftModelInterface";
 
 import { expect } from 'chai';
 
 var testModel : AircraftModel;
+var testModel2 : AircraftModel;
 
 describe('#createAircraftModel()', async function() {
     this.slow(1000) // This test is slow if it takes longer than 1000 ms
@@ -107,6 +108,45 @@ describe('#replaceAircraftModel()', async function() {
 
 })
 
+describe('#getAllAircraftModels()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Create another aircraft model
+    it('should insert Test Model into the aircraft_model table', async function() {     
+        let newModelName: string = "Test Model II";
+
+        //Create a new model, store the Object returned by createAircraftModel in res
+        testModel2 = {model_uuid: '', model_name: newModelName};
+        let res: any = await AircraftModelService.createAircraftModel(testModel2); 
+        testModel2.model_uuid = res.newAircraftModelUUID;
+
+        //We expect res to be an Object that has a property 'newAircraftModelUUID', 
+        //Use the UUID to see if the new model was inserted into the database
+        expect(res).to.be.an('Object').that.has.property('newAircraftModelUUID').that.is.a('string');
+        expect(await AircraftModelService.getAircraftModel(res.newAircraftModelUUID)).to.be.an('Object').that.has.property('model_name').that.equals(newModelName);
+    })
+
+    //Call getAllAircraftModels to see if the function retrieves both models created during testing
+    it('should return an array of AircraftModel the includes both test positions', async function(){
+        let res : any = await AircraftModelService.getAllAircraftModels();
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].model_uuid == testModel.model_uuid)
+                contains1 = true;
+            else if(res[i].model_uuid == testModel2.model_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
 
 describe('#removeAircraftModel()', async function() {
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
@@ -115,6 +155,10 @@ describe('#removeAircraftModel()', async function() {
     it('should remove Replacement Model from the aircraft_model table', async function() {
         expect(await AircraftModelService.removeAircraftModel(testModel.model_uuid)).to.be.an('Object').that.has.property('error').that.equals(false);
     })  
+
+    it('should remove Test Model II from the aircraft_model table', async function() {
+        expect(await AircraftModelService.removeAircraftModel(testModel2.model_uuid)).to.be.an('Object').that.has.property('error').that.equals(false);
+    }) 
 
     //Attempt to get the removed model
     it('should return an error when attempting to get a model that is not in the aircraft_model table', async function(){

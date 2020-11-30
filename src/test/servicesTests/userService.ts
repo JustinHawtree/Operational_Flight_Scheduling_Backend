@@ -1,9 +1,9 @@
 /* test userService */
 
-import * as userController from "../controllers/userController";
-import * as userService from "../services/userService";
-import * as authService from "../services/authService";
-import User, { validUserUpdateProps, baseUserData } from "../models/userInterface";
+import * as userController from "../../controllers/userController";
+import * as userService from "../../services/userService";
+import * as authService from "../../services/authService";
+import User, { validUserUpdateProps, baseUserData } from "../../models/userInterface";
 import { expect } from "chai";
 
 var testUser : User;
@@ -38,6 +38,72 @@ describe('#getUser()', async function() {
     })
 })
 
+describe('#getAllUsers()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    it('should return an array of User all the accounts in the database', async function(){
+        let res : any = await userService.getAllUsers();
+
+        let user1UUID : any = '8880549d-40c6-4efe-a9dc-f3f276fb8837'; //John Doe
+        let user2UUID : any = 'd205a550-f6e5-47ce-a9e1-f2fc0e2cb113'; //Jane Doe
+
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].account_uuid == user1UUID)
+                contains1 = true;
+            else if(res[i].account_uuid == user2UUID)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
+/*
+//Run after the authService tests
+describe('#getNonApprovedUsers()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    it('should return an array of User where the accounts have not been approved', async function(){
+        let res : any = await userService.getNonApprovedUsers();
+
+        expect(res.length).to.equal(1);
+    })
+})
+*/
+
+describe('#getPilots()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    it('should return an array of User that includes all the pilots in the database', async function(){
+        let res : any = await userService.getPilots();
+
+        let user1UUID : any = '8880549d-40c6-4efe-a9dc-f3f276fb8837'; //John Doe is a pilot (FP)
+        let user2UUID : any = 'd205a550-f6e5-47ce-a9e1-f2fc0e2cb113'; //Jane Doe is a pilot (FP)
+
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].account_uuid == user1UUID)
+                contains1 = true;
+            else if(res[i].account_uuid == user2UUID)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
 
 describe('#updateUser()', async function(){
     this.slow(1000); // This test is slow if it takes longer than 1000 ms

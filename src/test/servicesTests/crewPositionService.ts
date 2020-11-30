@@ -1,12 +1,13 @@
 /* test crewPositionService */
 
-import * as  crewPositionController from "../controllers/crewPositionController";
-import * as crewPositionService from "../services/crewPositionService";
-import CrewPosition, { baseCrewPositionData, validCrewPositionUpdateProps } from "../models/crewPositionInterface";
+import * as  crewPositionController from "../../controllers/crewPositionController";
+import * as crewPositionService from "../../services/crewPositionService";
+import CrewPosition, { baseCrewPositionData, validCrewPositionUpdateProps } from "../../models/crewPositionInterface";
 
 import { expect } from 'chai';
 
 var testPosition : CrewPosition;
+var testPosition2 : CrewPosition;
 
 describe('#createCrewPosition()', async function() {
     this.slow(1000) // This test is slow if it takes longer than 1000 ms
@@ -88,12 +89,55 @@ describe('#replaceCrewPosition()', async function(){
     })
 })
 
+describe('#getAllCrewPositions()', async function(){
+    this.slow(1000); //This test is slow if it takes longer than 1000 ms
+
+    //Create another Crewpostion
+    it('should insert Test Position II into the crew_position table', async function() {     
+        let newPositionName : string = 'Test Position II';
+
+        //Create a new CrewPosition, store the Object returned by createCrewPosition in res
+        testPosition2 = {crew_position_uuid: '', position: newPositionName, required: false};
+        let res = await crewPositionService.createCrewPosition(testPosition2);
+        testPosition2.crew_position_uuid = res.newCrewPositionUUID;
+
+        //We expect res to be an Object that has a property 'newCrewPositionUUID', 
+        //Use the UUID to see if the new position was inserted into the database
+        expect(res).to.be.an('Object').that.has.property('newCrewPositionUUID').that.is.a('string');
+        expect(await crewPositionService.getCrewPosition(res.newCrewPositionUUID)).to.be.an('Object').that.has.property('position').that.equals(newPositionName);
+    })
+
+    //Call getAllCrewPositions to see if the function retrieves both positions created during testing
+    it('should return an array of CrewPosition the includes both test positions', async function(){
+        let res : any = await crewPositionService.getAllCrewPositions();
+        let contains1 : boolean = false;
+        let contains2 : boolean = false;
+        let i : any = 0;
+
+        while((contains1 == false || contains2 == false) && i < res.length)
+        {
+            if(res[i].crew_position_uuid == testPosition.crew_position_uuid)
+                contains1 = true;
+            else if(res[i].crew_position_uuid == testPosition2.crew_position_uuid)
+                contains2 = true;
+
+            i++;
+        }
+
+        expect((contains1 && contains2)).to.equal(true);
+    })
+})
+
 describe('#removeCrewPosition()', async function() {
     this.slow(1000); // This test is slow if it takes longer than 1000 ms
  
     //Check if Test Position was deleted without error
     it('should remove Test Position from the crew_position table', async function() {
         expect(await crewPositionService.removeCrewPosition( testPosition.crew_position_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
+    })
+
+    it('should remove Test Position II from the crew_position table', async function() {
+        expect(await crewPositionService.removeCrewPosition( testPosition2.crew_position_uuid)).to.be.a('Object').that.has.property('error').that.equals(false);
     })
 
     //Attempt to get the removed position
