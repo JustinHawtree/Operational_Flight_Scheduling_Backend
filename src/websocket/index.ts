@@ -227,8 +227,12 @@ export const app = uWS.App().ws('/*', {
               ws.send(JSON.stringify({ error: "Generation Error" }));
               return;
             }
+            ws.send(JSON.stringify({
+              topic: "generation",
+              action: "generate",
+              message: response
+            }));
           })
-          ws.send(JSON.stringify({topic: "generation", action: "generate", message: "New Generation!"}));
           break; 
 
 
