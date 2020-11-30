@@ -19,7 +19,7 @@ export const getEssential = async (start_date: string, end_date: string): Promis
   const crewPositionSQL: string = baseCrewPositionData;
   const airmenSQL: string = baseUserData + "WHERE role <> 'Admin' AND accepted = true";
   const aircraftModelSQL: string = baseAircraftModelData + aircraftModelGroupBy;
-  const flightSQL: string =  baseFlightData + `WHERE FT.end_time > $1 OR FT.start_time < $2 ` + flightGroupBy;
+  const flightSQL: string =  baseFlightData + `WHERE FT.end_time > $1 AND FT.start_time < $2 ` + flightGroupBy;
   const flightValues: Array<string> = [start_date, end_date];
   
   try {
