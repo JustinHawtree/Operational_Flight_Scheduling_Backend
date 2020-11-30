@@ -4,6 +4,9 @@ const aircraftHandler = async (action: string, payload: { [key: string]: string 
 
     case "generate":
       console.log("Websocket Generation generate case!");
+      console.log("Generate Handler Got Message:", payload);
+      console.log("Start:", new Date(payload.start));
+      console.log("End:", new Date(payload.end));
       try {
         callback(false, 
           { 
