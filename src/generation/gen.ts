@@ -8,8 +8,6 @@ import * as LocationService from "../services/locationService";
 import Location from "../models/locationInterface";
 
 const POPULATION_SIZE: number = 200;
-const MAX_FLIGHTS: number = 20;
-
 
 //const schedule_start: Date = new Date(2020, 10, 16);
 //const schedule_end: Date = new Date(2020, 10, 20, 20);
@@ -38,6 +36,7 @@ class Schedule {
   static schedule_start: Date;
   static schedule_end: Date;
   static duration: number;
+  static num_flights: number;
   static avaliable_genes: Array<Array<any>>;
 
   constructor(gnome: any) {
@@ -72,7 +71,7 @@ class Schedule {
 
   static create_gnome(): Array<Array<any>> {
     let schedule_gnome: Array<any> = [];
-    for (let i = 0; i < MAX_FLIGHTS; i++) {
+    for (let i = 0; i < Schedule.num_flights; i++) {
       schedule_gnome.push(this.create_flight_chromosome());
     }
     return schedule_gnome;
@@ -157,6 +156,7 @@ async function generate_schedule(config: any): Promise<any> {
   //console.log("Final Start", Schedule.schedule_start);
   Schedule.schedule_end = new Date(config.end);
   Schedule.duration =  Number(config.duration);
+  Schedule.num_flights = Number(config.num_flights);
   const aircraft_model_whitelist = config.whitelist_models;
 
   const aircrafts: Array<Aircraft> = await AircraftService.getAllAvaliableAircrafts();
@@ -164,7 +164,7 @@ async function generate_schedule(config: any): Promise<any> {
   const aircraft_models: Array<AircraftModel> = await AircraftModelService.getAllAircraftModels();
   const crew_positions: Array<CrewPosition> = await CrewPositionService.getAllCrewPositions();
   const colors: Array<string> = ["#9C27B0", "#3F51B5", "#3174ad", "#4CAF50", "#FFC107", "#FF5722", "#D50000"];
-  const names: Array<string> = ["Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", 
+  const names: Array<string> = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", 
     "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform",
     "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
 
@@ -274,18 +274,3 @@ async function generate_runner(config: any): Promise<any> {
   return flights;
 }
 export default generate_runner;
-//generate_runner(null);
-
-
-// {
-//   flight_uuid: 'c7a70c63-d2b1-44ec-9d03-df77f8f81de0',
-//   location_uuid: '96017add-cf3d-4075-b09b-7fd9ad690e04',
-//   aircraft_uuid: '63c6821a-fb98-418b-9336-c60beb837708',
-//   start: '2020-11-29T12:30:00.000Z',
-//   end: '2020-11-29T16:30:00.000Z',
-//   color: "#D50000",
-//   title: "Sample Title 1",
-//   description: "Sample Description 1",
-//   allDay: false,
-//   crew_members: []
-// },
