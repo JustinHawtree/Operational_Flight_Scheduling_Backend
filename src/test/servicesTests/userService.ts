@@ -41,7 +41,7 @@ describe('#getUser()', async function() {
 describe('#getAllUsers()', async function(){
     this.slow(1000); //This test is slow if it takes longer than 1000 ms
 
-    it('should return an array of User all the accounts in the database', async function(){
+    it('should return an array of User with all the accounts in the database', async function(){
         let res : any = await userService.getAllUsers();
 
         let user1UUID : any = '8880549d-40c6-4efe-a9dc-f3f276fb8837'; //John Doe
@@ -65,7 +65,7 @@ describe('#getAllUsers()', async function(){
     })
 })
 
-/*
+
 //Run after the authService tests
 describe('#getNonApprovedUsers()', async function(){
     this.slow(1000); //This test is slow if it takes longer than 1000 ms
@@ -76,7 +76,7 @@ describe('#getNonApprovedUsers()', async function(){
         expect(res.length).to.equal(1);
     })
 })
-*/
+
 
 describe('#getPilots()', async function(){
     this.slow(1000); //This test is slow if it takes longer than 1000 ms
@@ -110,7 +110,7 @@ describe('#updateUser()', async function(){
     let updatedFirstName = 'Test';
 
     //Test to see if first_name is updated
-    it('should return an Object with property error that equals false (no errors were encountered when updating the \'first_name\' property', async function(){
+    it('should return an Object with property error that equals false (no errors were encountered when updating the \'first_name\' property)', async function(){
         expect(await userService.updateUser(testUser.account_uuid, {first_name: updatedFirstName, accepted: false})).to.be.an('Object').with.property('error').that.equals(false);
         
         //Update global variables
@@ -140,7 +140,7 @@ describe('#replaceUser()', async function(){
     let originalName = 'John';
 
     //Replace with original user
-    it('should return an Object with property \'error\' that equals false (no errors were encountered when replacing the updated user with a User that matches the original', async function() {
+    it('should return an Object with property \'error\' that equals false (no errors were encountered when replacing the updated user with a User that matches the original)', async function() {
         let replacementUser : User = await userService.getUser('8880549d-40c6-4efe-a9dc-f3f276fb8837');
         replacementUser.first_name = originalName;
 
@@ -151,7 +151,7 @@ describe('#replaceUser()', async function(){
     })
     
 
-    it('should return an Object with property \'error\' that equals \'No row updated\' (attempting to replace an User that is not in the database)', async function(){
+    it('should return an Object with property \'error\' that equals \'No row updated\' (attempting to replace a User that is not in the database)', async function(){
         let testingUUID = '55798476-721c-4aa0-9c4e-72225848d9f2';
         expect(await userService.replaceUser(testingUUID, testUser)).to.be.an('Object').with.property('error').that.equals('No row updated');
     })

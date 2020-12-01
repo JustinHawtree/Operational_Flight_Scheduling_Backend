@@ -19,10 +19,11 @@ var testFlightCrew : FlightCrew;
 var testFlightCrewUUID : any;
 var testAccountUUID = 'd205a550-f6e5-47ce-a9e1-f2fc0e2cb113'; // Jane Doe
 var testFlightUUID = 'e74aa81e-e861-4329-823c-0c646c3f3a38'; // HH-60 Pave Hawk flight
+var testFlight2UUID = '0bf6a55d-a5e7-4835-8d90-3a6bdd4f07d6'; //HC-130J Combat King Ⅱ flight
 var pilotUUID = 'b15bd146-0d92-4080-9740-2112fed365fd'; //Pilot
 var copilotUUID = '991dd169-dc45-4049-8a8d-58173d66223b'; //Copilot
 
-//createFlightCrewsByFlight, removeFlightCrewsByFlight
+//Used for createFlightCrewsByFlight, removeFlightCrewsByFlight
 var byFlightFlightUUID : any; 
 
 describe('#createFlightCrew()', async function() {
@@ -65,6 +66,31 @@ describe('#getFlightCrew()', async function(){
             expect(error.message).to.be.an('string').that.equals('Get FlightCrew Error: ');
         }
     }) 
+})
+
+describe('getAllFlightCrews', async function(){
+    this.slow(1000); //This test is slow if takes longer than 1000 ms
+  
+        it('should return an array of FlightCrew that includes crew members from both flights in the database', async function(){
+
+            let res : any = await flightCrewService.getAllFlightCrews();
+            let contains1 : boolean = false;
+            let contains2 : boolean = false;
+            let i : any = 0;
+    
+            while((contains1 == false || contains2 == false) && i < res.length)
+            {
+                if(res[i].flight_uuid == testFlightUUID)
+                    contains1 = true;
+                else if(res[i].flight_uuid == testFlight2UUID)
+                    contains2 = true;
+    
+                i++;
+            }
+            
+            expect((contains1 && contains2)).to.equal(true);
+        })
+
 })
 
 describe('#updateFlightCrew()', async function(){
@@ -165,12 +191,28 @@ describe('#createFlightCrewsByFlight()', async function(){
 
 describe('#removeAllFlightCrewsByFlight()', async function(){
     
-    //Test if flight is removed without error
+    //Test if FlightCrew(s) is removed without error
     it('should remove the test flight from the flight table', async function() {
         expect(await flightCrewService.removeAllFlightCrewsByFlight(byFlightFlightUUID)).to.be.a('Object').that.has.property('error').that.equals(false);
     })
 
-    //Attempt to remove the test flight again, should return error: No row deleted because it has already been removed
+    it('should return an array of FlightCrew that does not include crew members from the flight byFlightFlightUUID', async function(){
+
+        let res : any = await flightCrewService.getAllFlightCrews();
+        let contains : boolean = false;
+        let i : any = 0;
+
+        while(i < res.length)
+        {
+            if(res[i].flight_uuid == byFlightFlightUUID)
+                contains = true;
+            i++;
+        }
+        
+        expect((contains)).to.equal(false);
+    })
+
+    //Attempt to remove again, should return error: No row deleted because it has already been removed
     it('should return \'No row deleted\' because the flight crew entries have already been deleted', async function() {
         expect(await flightCrewService.removeAllFlightCrewsByFlight(byFlightFlightUUID)).to.be.a('Object').that.has.property('error').that.equals('No row deleted');
     })

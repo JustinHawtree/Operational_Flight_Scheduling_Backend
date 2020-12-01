@@ -9,7 +9,6 @@ import * as AircraftModelService from "../../services/aircraftModelService";
 import AircraftModel, { validAircraftModelUpdateProps, baseAircraftModelData, aircraftModelGroupBy } from "../../models/aircraftModelInterface";
 
 import { expect } from 'chai';
-import { replaceCrewPosition } from "../../services/crewPositionService";
 
 var testAircraft : Aircraft;
 var testAircraft2 : Aircraft;
