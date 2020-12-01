@@ -4,18 +4,15 @@ import * as AircraftModelService from "../services/aircraftModelService";
 import AircraftModel from "../models/aircraftModelInterface";
 import * as CrewPositionService from "../services/crewPositionService";
 import CrewPosition from "../models/crewPositionInterface";
+import * as LocationService from "../services/locationService";
+import Location from "../models/locationInterface";
 
 const POPULATION_SIZE: number = 200;
-const MAX_FLIGHTS: number = 23;
+const MAX_FLIGHTS: number = 20;
 
-let avaliable_genes: Array<Array<number>> = [
-  Array.from({length:11}, (_,i) => i + 1),
-  [],
-  Array.from({length:48}, (_,i) => i + 1)
-];
 
-const schedule_start: Date = new Date(2020, 10, 16);
-const schedule_end: Date = new Date(2020, 10, 20, 20);
+//const schedule_start: Date = new Date(2020, 10, 16);
+//const schedule_end: Date = new Date(2020, 10, 20, 20);
 
 function sample(array: Array<any>): any {
   return array[~~(Math.random() * array.length)]
@@ -38,6 +35,10 @@ function zip(a: Array<any>, b: Array<any>): Array<any> {
 class Schedule {
   gnome: any;
   fitness: number;
+  static schedule_start: Date;
+  static schedule_end: Date;
+  static duration: number;
+  static avaliable_genes: Array<Array<any>>;
 
   constructor(gnome: any) {
     if (gnome === null) {
@@ -54,16 +55,16 @@ class Schedule {
 
   static create_flight_chromosome(): Array<any> {
     let flight_chromosome: Array<any> = [];
-    for (let i = 0; i < avaliable_genes.length; i++) {
+    for (let i = 0; i < Schedule.avaliable_genes.length; i++) {
       if (i === 0) {
-        flight_chromosome.push(random_date_in_range(schedule_start, schedule_end));
+        flight_chromosome.push(random_date_in_range(Schedule.schedule_start, Schedule.schedule_end));
       } else if (i === 1) {
-        let hours: number = 4;
+        let hours: number = this.duration;
         let end_flight_time: Date = new Date(flight_chromosome[0].valueOf());
         end_flight_time.setHours(end_flight_time.getHours() + hours);
         flight_chromosome.push(end_flight_time);
       } else {
-        flight_chromosome.push(this.mutated_genes(avaliable_genes[i]));
+        flight_chromosome.push(this.mutated_genes(Schedule.avaliable_genes[i]));
       }
     }
     return flight_chromosome;
@@ -149,15 +150,38 @@ class Schedule {
   }
 }
 
+// Array.from({length:11}, (_,i) => i + 1)
+async function generate_schedule(config: any): Promise<any> {
+  //console.log("Start config", config.start);
+  Schedule.schedule_start = new Date(config.start);
+  //console.log("Final Start", Schedule.schedule_start);
+  Schedule.schedule_end = new Date(config.end);
+  Schedule.duration =  Number(config.duration);
+  const aircraft_model_whitelist = config.whitelist_models;
 
-async function generate_schedule(): Promise<any> {
   const aircrafts: Array<Aircraft> = await AircraftService.getAllAvaliableAircrafts();
+  const locations: Array<Location> = await LocationService.getAllLocations();
   const aircraft_models: Array<AircraftModel> = await AircraftModelService.getAllAircraftModels();
   const crew_positions: Array<CrewPosition> = await CrewPositionService.getAllCrewPositions();
-  console.log("Aircrafts:", aircrafts);
-  console.log("Aircraft Models", aircraft_models);
-  console.log("Crew_positions", crew_positions);
-  return 1;
+  const colors: Array<string> = ["#9C27B0", "#3F51B5", "#3174ad", "#4CAF50", "#FFC107", "#FF5722", "#D50000"];
+  const names: Array<string> = ["Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", 
+    "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform",
+    "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
+
+  let aircraft_list: any = Array.from(aircrafts.filter((model) => aircraft_model_whitelist.includes(model.model_uuid)));
+
+
+  let avaliable_genes: Array<Array<any>> = [
+    [],
+    [],
+    Array.from(aircraft_list),
+    Array.from(locations),
+    Array.from(colors),
+    Array.from(names),
+  ];
+  Schedule.avaliable_genes = Array.from(avaliable_genes);
+
+
 
   let generation: number = 1;
 
@@ -167,6 +191,7 @@ async function generate_schedule(): Promise<any> {
   for (let i = 0; i < POPULATION_SIZE; i++) {
     population.push(new Schedule(null));
   }
+
 
   while (!found) {
     population.sort((a, b) => a.fitness - b.fitness);
@@ -178,7 +203,7 @@ async function generate_schedule(): Promise<any> {
     });
     let sorted_apex: any = population[0];
     sorted_apex.gnome.sort((a:any, b:any) => ((a[0] < b[0]) ? -1 : ((a[0] > b[0]) ? 1 : 0)));
-    console.log("Generation", generation, " Fitness", population[0].fitness,"\n", sorted_apex.printChromosome());
+    //console.log("Generation", generation, " Fitness", population[0].fitness,"\n", sorted_apex.printChromosome());
 
 
     if (population[0].fitness <= 0) {
@@ -212,15 +237,55 @@ async function generate_schedule(): Promise<any> {
 
     population = Array.from(new_generation);
     generation += 1;
-
   }
 }
 
-async function generate_tester() {
-  let new_schedule = await generate_schedule();
-  console.log("Tester!");
-  return;
-  console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
+async function generate_runner(config: any): Promise<any> {
+  if (config === null) {
+    config = {
+      whitelist_models: ['1b365e0c-ee69-4bf6-bc69-92868f2a7ff3',
+                         '2c04be67-fc24-4eba-b6ca-57c81daab9c4',
+                         'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b'],
+      start: "2020-11-29T12:30:00.000Z",
+      end: '2020-12-05T20:30:00.000Z',
+      duration: 3
+    };
+  }
+  let new_schedule = await generate_schedule(config);
+  //console.log("Tester!");
+  //console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
+  let flights: Array<any> = [];
+  let mock_uuid: number = 123;
+  new_schedule.schedule.gnome.forEach((chromosome: any) => {
+    flights.push({
+      flight_uuid: mock_uuid,
+      location_uuid: chromosome[3].location_uuid,
+      aircraft_uuid: chromosome[2].aircraft_uuid,
+      start: chromosome[0],
+      end: chromosome[1],
+      color: chromosome[4],
+      title: chromosome[5],
+      description: "",
+      allDay: false,
+      crew_members: []
+    })
+    mock_uuid += 1;
+  });
+  return flights;
 }
+export default generate_runner;
+//generate_runner(null);
 
-generate_tester();
+
+// {
+//   flight_uuid: 'c7a70c63-d2b1-44ec-9d03-df77f8f81de0',
+//   location_uuid: '96017add-cf3d-4075-b09b-7fd9ad690e04',
+//   aircraft_uuid: '63c6821a-fb98-418b-9336-c60beb837708',
+//   start: '2020-11-29T12:30:00.000Z',
+//   end: '2020-11-29T16:30:00.000Z',
+//   color: "#D50000",
+//   title: "Sample Title 1",
+//   description: "Sample Description 1",
+//   allDay: false,
+//   crew_members: []
+// },
