@@ -203,12 +203,18 @@ async function generate_schedule(config: any): Promise<any> {
     });
     let sorted_apex: any = population[0];
     sorted_apex.gnome.sort((a:any, b:any) => ((a[0] < b[0]) ? -1 : ((a[0] > b[0]) ? 1 : 0)));
-    //console.log("Generation", generation, " Fitness", population[0].fitness,"\n", sorted_apex.printChromosome());
+    console.log("Generation", generation, " Fitness", population[0].fitness,"\n\n", sorted_apex.printChromosome());
 
 
     if (population[0].fitness <= 0) {
       found = true;
       return {schedule: population[0], generation: generation};
+      break;
+    }
+    // kill if contraints too tight Generation 8000
+    if (generation >= 8000) {
+      found = false;
+      return {error: "Constraint too tight (beyond 8000) ending infinite loop"};
       break;
     }
 
@@ -246,14 +252,19 @@ async function generate_runner(config: any): Promise<any> {
       whitelist_models: ['1b365e0c-ee69-4bf6-bc69-92868f2a7ff3',
                          '2c04be67-fc24-4eba-b6ca-57c81daab9c4',
                          'b0f4cd21-9e4c-4b4d-b4ae-88668b492a7b'],
-      start: "2020-11-29T12:30:00.000Z",
+      start: "2020-11-29T01:30:00.000Z",
       end: '2020-12-05T20:30:00.000Z',
-      duration: 3
+      duration: 4,
+      num_flights: 26
     };
   }
   let new_schedule = await generate_schedule(config);
-  //console.log("Tester!");
-  //console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
+  if (new_schedule.error) {
+    console.log("GENERATION ERROR: TOOK TOO LONG TO GENERATE SCHEDULE");
+    return [];
+  }
+  console.log("Tester!");
+  console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
   let flights: Array<any> = [];
   let mock_uuid: number = 123;
   new_schedule.schedule.gnome.forEach((chromosome: any) => {
@@ -273,4 +284,5 @@ async function generate_runner(config: any): Promise<any> {
   });
   return flights;
 }
+generate_runner(null);
 export default generate_runner;
