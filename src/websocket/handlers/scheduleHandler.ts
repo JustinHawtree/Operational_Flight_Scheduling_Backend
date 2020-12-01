@@ -33,13 +33,13 @@ const scheduleHandler = async (action: string, payload: { [key: string]: any }, 
             }
           }
           //let returnFlight: any = { ...flight, flight_uuid: newFlight.newFlightUUID, crew_members: payload.crew_members };
-          let start = payload.start_time;
-          let end = payload.end_time;
-          delete flight["start_time"];
-          delete flight["end_time"];
+          //let start = payload.start_time;
+          //let end = payload.end_time;
+          //delete flight["start_time"];
+          //delete flight["end_time"];
           flight["flight_uuid"] = newFlight.newFlightUUID
-          flight["start"] = start;
-          flight["end"] = end;
+          //flight["start"] = start;
+          //flight["end"] = end;
 
         } catch (error) {
           console.error("Websocket Flight add error:", error);
