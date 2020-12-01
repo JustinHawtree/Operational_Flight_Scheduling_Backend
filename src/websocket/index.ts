@@ -6,6 +6,7 @@ import flightHandler from "./handlers/flightHandler";
 import flightCrewHandler from "./handlers/flightCrewHandler";
 import airmanHandler from "./handlers/airmanHandler";
 import generationHandler from "./handlers/generationHandler";
+import scheduleHandler from "./handlers/scheduleHandler";
 import { checkJwtWebsocket } from "../middlewares/checkJwt";
 import uWS from "uWebSockets.js";
 
@@ -234,8 +235,24 @@ export const app = uWS.App().ws('/*', {
               message: response
             }));
           })
-          break; 
+          break;
 
+        case "schedule":
+          console.log("Schedule websocket called!");
+          scheduleHandler(action, message, (error: any, response: any) => {
+            if (error) {
+              console.log("Websocket Error: Schedule Error:", error);
+              ws.send(JSON.stringify({ error: "Schedule Error" }));
+              return;
+            }
+            console.log("Sending Generation Message to frontend");
+            ws.send(JSON.stringify({
+              topic: "schedule",
+              action: action,
+              message: response
+            }));
+          })
+          break;
 
         default:
           console.log("Websocket Error: Invalid Topic Error: Topic Given:", topic);
