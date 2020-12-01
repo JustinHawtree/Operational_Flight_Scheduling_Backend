@@ -227,6 +227,7 @@ export const app = uWS.App().ws('/*', {
               ws.send(JSON.stringify({ error: "Generation Error" }));
               return;
             }
+            console.log("Sending Generation Message to frontend");
             ws.send(JSON.stringify({
               topic: "generation",
               action: "generate",
