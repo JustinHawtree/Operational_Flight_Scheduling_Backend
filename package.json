@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "bcrypt": "^4.0.1",
+    "chai-http": "^4.3.0",
     "common.js": "^1.1.1",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",

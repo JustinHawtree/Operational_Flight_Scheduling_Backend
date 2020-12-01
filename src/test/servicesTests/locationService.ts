@@ -113,7 +113,7 @@ describe('#getAllLocations()', async function(){
     })
 
     //Call getAllLocations to see if the function retrieves both locations created during testing
-    it('should return an array of Location the includes both test locations', async function(){
+    it('should return an array of Location that includes both test locations', async function(){
         let res : any = await locationService.getAllLocations();
         let contains1 : boolean = false;
         let contains2 : boolean = false;

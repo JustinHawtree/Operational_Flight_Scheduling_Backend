@@ -111,7 +111,7 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
   }
 
   sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
-  console.log("SQL:", sql);
+  //console.log("SQL:", sql);
   values.push(account_uuid);
 
   try {
@@ -142,7 +142,7 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<{ e
   }
 
   sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
-  console.log("SQL:", sql);
+  //console.log("SQL:", sql);
   values.push(account_uuid);
   
   try {
@@ -153,7 +153,7 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<{ e
     if (client) client.release();
     throw new Error("Replace User Error from SQL Query error :"+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
+  //console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
