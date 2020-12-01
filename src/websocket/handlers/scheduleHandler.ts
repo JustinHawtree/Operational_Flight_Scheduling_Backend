@@ -8,7 +8,7 @@ const scheduleHandler = async (action: string, payload: { [key: string]: any }, 
     case "add_many":
       console.log("Websocket Flight Add case!");
       
-      await payload.flights.forEach( async (flight: any) => {
+      for (const flight of payload.flights) {
         console.log("Flight Start:", flight.start, "Flight End:", flight.end);
         try {
           let formattedflight: Flight = {
@@ -46,7 +46,7 @@ const scheduleHandler = async (action: string, payload: { [key: string]: any }, 
           callback("Websocket Flight add error: " + error, null);
         }
         console.log("Offically Done one of the flight database Stuff");
-      });
+      };
       console.log("Going to send to front end");
       callback(false, payload);
       break;
