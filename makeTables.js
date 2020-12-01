@@ -204,7 +204,7 @@ const preparedSQL = [
       model_uuid UUID,
       crew_position_uuid UUID,
       position_order SMALLINT NOT NULL,
-      PRIMARY KEY (model_position_uuid),
+      PRIMARY KEY (model_position_uuid, position_order),
       FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
       FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
   )`,
