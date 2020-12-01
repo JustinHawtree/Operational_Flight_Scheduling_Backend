@@ -9,6 +9,7 @@ const scheduleHandler = async (action: string, payload: { [key: string]: any }, 
       console.log("Websocket Flight Add case!");
       
       await payload.flights.forEach( async (flight: any) => {
+        console.log("Flight Start:", flight.start, "Flight End:", flight.end);
         try {
           let formattedflight: Flight = {
             flight_uuid: "",
@@ -22,7 +23,7 @@ const scheduleHandler = async (action: string, payload: { [key: string]: any }, 
             allDay: Boolean(flight.allDay)
           };
 
-          let newFlight = await flightService.createFlight(flight);
+          let newFlight = await flightService.createFlight(formattedflight);
 
           if (flight.crew_members && flight.crew_members.length > 0) {
             let crewResult = await flightCrewService.createFlightCrewsByFlight(newFlight.newFlightUUID, payload.crew_members);
