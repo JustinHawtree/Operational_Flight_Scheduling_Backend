@@ -15,7 +15,7 @@ const aircraftModelHandler = async (action: string, payload: { [key: string]: an
 
         let newAircraftModel = await aircraftModelService.createAircraftModel(aircraft_model);
 
-        if (payload.positions) {
+        if (payload.positions && payload.positions.length) {
           let positionNum = 1;
           for (const crew_position of payload.positions) {
             let modelPositionResult = await modelPositionService.createModelPosition(
@@ -26,7 +26,7 @@ const aircraftModelHandler = async (action: string, payload: { [key: string]: an
               });
           }
         }
-        
+
         callback(false, { ...aircraft_model, model_uuid: newAircraftModel.newAircraftModelUUID, positions: payload.positions ? payload.positions : [] });
 
       } catch (error) {
