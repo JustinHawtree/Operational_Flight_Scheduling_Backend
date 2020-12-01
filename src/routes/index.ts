@@ -7,6 +7,7 @@ import aircraft_model from "./aircraftModelRoute";
 import crew_position from "./crewPositionRoute";
 import flight from "./flightRoute";
 import essential from "./essentialRoute";
+import csv from "./csvRoute";
 
 
 const routes = Router();
@@ -19,5 +20,6 @@ routes.use('/aircraft_model', aircraft_model);
 routes.use("/crew_position", crew_position);
 routes.use("/flight", flight);
 routes.use("/essential", essential);
+routes.use("/csv", csv);
 
 export default routes;
