@@ -203,7 +203,7 @@ async function generate_schedule(config: any): Promise<any> {
     });
     let sorted_apex: any = population[0];
     sorted_apex.gnome.sort((a:any, b:any) => ((a[0] < b[0]) ? -1 : ((a[0] > b[0]) ? 1 : 0)));
-    console.log("Generation", generation, " Fitness", population[0].fitness,"\n\n", sorted_apex.printChromosome());
+    //console.log("Generation", generation, " Fitness", population[0].fitness,"\n\n", sorted_apex.printChromosome());
 
 
     if (population[0].fitness <= 0) {
@@ -263,8 +263,8 @@ async function generate_runner(config: any): Promise<any> {
     console.log("GENERATION ERROR: TOOK TOO LONG TO GENERATE SCHEDULE");
     return [];
   }
-  console.log("Tester!");
-  console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
+  //console.log("Tester!");
+  //console.log("Done! Generation", new_schedule.generation, " Fitness", new_schedule.schedule.fitness, new_schedule.schedule.printChromosome());
   let flights: Array<any> = [];
   let mock_uuid: number = 123;
   new_schedule.schedule.gnome.forEach((chromosome: any) => {
