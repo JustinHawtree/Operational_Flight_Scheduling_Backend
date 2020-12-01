@@ -1,6 +1,7 @@
 import AircraftModel, { validAircraftModelUpdateProps } from "../../models/aircraftModelInterface";
 import * as aircraftModelService from "../../services/aircraftModelService";
 import * as modelPositionService from "../../services/modelPositionService";
+import ModelPosition from "../../models/modelPositionInterface";
 
 const aircraftModelHandler = async (action: string, payload: { [key: string]: any }, callback: (error: any, response: any) => any) => {
   switch (action) {
@@ -14,16 +15,16 @@ const aircraftModelHandler = async (action: string, payload: { [key: string]: an
         };
 
         let newAircraftModel = await aircraftModelService.createAircraftModel(aircraft_model);
-
+        console.log("Adding Aircraft Models: Positions:", payload.positions);
         if (payload.positions && payload.positions.length) {
           let positionNum = 1;
           for (const crew_position of payload.positions) {
-            let modelPositionResult = await modelPositionService.createModelPosition(
-              { model_position_uuid: "", 
-                model_uuid: newAircraftModel.newAircraftModelUUID,
-                crew_position_uuid: crew_position.crew_position_uuid,
-                position_order: positionNum
-              });
+            let newModelPosition: ModelPosition = {model_position_uuid: "", 
+            model_uuid: newAircraftModel.newAircraftModelUUID,
+            crew_position_uuid: crew_position.crew_position_uuid,
+            position_order: positionNum
+          }
+            let modelPositionResult = await modelPositionService.createModelPosition(newModelPosition);
           }
         }
 
