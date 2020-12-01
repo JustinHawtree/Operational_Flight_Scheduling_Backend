@@ -169,7 +169,7 @@ export const app = uWS.App().ws('/*', {
             }
             ws.publish('aircraft',
               JSON.stringify({
-                topic: "aicraft",
+                topic: "aircraft",
                 action: action,
                 message: response
               }));

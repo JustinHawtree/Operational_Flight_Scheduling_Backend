@@ -232,7 +232,7 @@ const preparedSQL = [
 `INSERT INTO aircraft_status (status)
     VALUES ('Available'),
            ('Unavailable'),
-           ('Under_Maintenance');`,         
+           ('Maintenance');`,         
 
   `CREATE TABLE aircraft (
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),

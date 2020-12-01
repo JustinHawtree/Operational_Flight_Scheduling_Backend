@@ -98,6 +98,7 @@ export const updateAircraft = async (aircraft_uuid: string, updateProps: any): P
   sql += (sqlSubSet + ` WHERE aircraft_uuid = $${values.length+1}`);
   console.log("SQL:", sql);
   values.push(aircraft_uuid);
+  console.log("Values:", values);
 
   try {
     client = await pool.connect();
