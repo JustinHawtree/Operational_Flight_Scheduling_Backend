@@ -20,6 +20,7 @@ const preparedSQL = [
   `DROP TABLE IF EXISTS "account";`,
   `DROP TABLE IF EXISTS "role";`,
   `DROP TABLE IF EXISTS "meta_position";`,
+  `DROP TABLE IF EXISTS "meta_position_name";`,
   `DROP TABLE IF EXISTS "crew_position"`,
   `DROP TABLE IF EXISTS "pilot_status"`,
   `DROP TABLE IF EXISTS "pilot";`,

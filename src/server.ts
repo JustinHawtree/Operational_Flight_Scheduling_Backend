@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://localhost:3000', 'http://localhost:3000', 'https://www.airforceofs.com', 'https://airforceofs.com']
+  origin: ['https://localhost:3000', 'http://localhost:3000','http://localhost:3001', 'https://www.airforceofs.com', 'https://airforceofs.com']
 }))
 
 

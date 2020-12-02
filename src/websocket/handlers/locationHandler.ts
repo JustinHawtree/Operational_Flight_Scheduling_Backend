@@ -13,14 +13,15 @@ const locationHandler = async (action: string, payload: { [key: string]: string 
           track_num: parseInt(payload.track_num)
         };
 
-        let newLocation = await locationService.createLocation(location)
+        let newLocation = await locationService.createLocation(location);
+        console.log("Got Here");
         callback(false, { ...location, location_uuid: newLocation.newLocationUUID });
 
       } catch (error) {
         console.error("Websocket Location add error:", error);
         callback("Websocket Location add error: " + error, null);
       }
-
+      console.log("Got Here2");
       break;
 
     case "edit":

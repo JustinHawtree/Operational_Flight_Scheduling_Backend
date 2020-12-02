@@ -7,7 +7,7 @@ const router = Router();
 
 
 // Get Non-Approved Users
-router.get("/approval", [checkJwt, checkRole(["Admin"])], UserController.getNonApprovedUsers);
+router.get("/nonapproved", [checkJwt, checkRole(["Admin"])], UserController.getNonApprovedUsers);
 
 // Get Pilots
 router.get("/pilots", [checkJwt, checkRole(["Admin"])], UserController.getPilots); 
@@ -25,7 +25,11 @@ router.get("/", [checkJwt, checkRole(["Admin"])], UserController.getAllUsers);
 // Replace one user
 router.put("/:uuid", [checkJwt, checkRole(["Admin"])], UserController.replaceUser);
 
+// Approve a list of user uuids
+router.patch("/approval", [checkJwt, checkRole(["Admin"])], UserController.approveUser);
+
 // Edit one user
 router.patch("/:uuid", [checkJwt, checkRole(["Admin"])], UserController.editUser);
+
 
 export default router;

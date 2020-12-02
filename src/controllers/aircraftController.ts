@@ -20,6 +20,17 @@ export default class AircraftController {
   };
 
 
+  static getAllAvaliableAircrafts = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const aircrafts: Array<Aircraft> = await AircraftService.getAllAvaliableAircrafts();
+      return res.status(200).send({ aircrafts });
+    } catch (error) {
+      console.error(error.message);
+      return res.sendStatus(500);
+    }
+  }
+
+
   static getAllAircrafts = async(req: Request, res: Response): Promise<Response> => {
     try {
       const aircrafts: Array<Aircraft> = await AircraftService.getAllAircrafts();
@@ -29,6 +40,8 @@ export default class AircraftController {
       return res.sendStatus(500);
     }
   }
+
+
 
 
   static createAircraft = async(req: Request, res: Response): Promise<Response> => {

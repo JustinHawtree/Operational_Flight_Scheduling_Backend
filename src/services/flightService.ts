@@ -39,7 +39,7 @@ export const getAllFlights = async (): Promise<Array<Flight>> => {
 
 export const getAllFlightsBetweenTimes = async (start_date: Date, end_date: Date): Promise<Array<Flight>> => {
   let client: any = null;
-  const SQL: string = baseFlightData + `WHERE FT.end_time > $1 OR FT.start_time < $2 ` + flightGroupBy;
+  const SQL: string = baseFlightData + `WHERE FT.end_time > $1 AND FT.start_time < $2 ` + flightGroupBy;
   let sqlResult: any = null;
 
   try {
@@ -64,6 +64,7 @@ export const createFlight = async (flight: Flight): Promise<{ error: any, newFli
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
+    client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Create Flight Error :"+error);
@@ -151,7 +152,7 @@ export const removeFlight = async (flight_uuid: string): Promise<{ error: any }>
     client.release();
   } catch (error) {
     if (client) client.release();
-    throw new Error("Delete Flight Error from SQL Query erorr: "+error);
+    throw new Error("Delete Flight Error from SQL Query error: "+error);
   }
 
   if (sqlResult.rowCount <= 0) {

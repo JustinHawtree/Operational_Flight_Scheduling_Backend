@@ -92,6 +92,22 @@ const preparedSQL = [
               ('Deployed_Unavailable'),
               ('Unavailable')`,     
 
+
+  `CREATE TABLE meta_position_name (
+    meta_position_name_uuid UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
+    meta_name VARCHAR(30) UNIQUE NOT NULL,
+    PRIMARY KEY (meta_name)
+  );`,
+                                
+  `INSERT INTO meta_position_name (meta_name)
+      VALUES ('meta_pilot'),
+              ('meta_load'),
+              ('meta_combat_system_officer'),
+              ('meta_engineer'),
+              ('meta_gunner')`, 
+
+
+
   /* General account, holds login info and using the flight experience enum */
   `CREATE TABLE account (
       account_uuid UUID DEFAULT uuid_generate_v4(),
@@ -106,10 +122,12 @@ const preparedSQL = [
       created_on TIMESTAMP,
       last_login TIMESTAMP,
       user_status VARCHAR(30) NOT NULL DEFAULT 'Available',
+      meta_position_status VARCHAR(30) NOT NULL DEFAULT 'meta_pilot',
       FOREIGN KEY (rank_uuid) REFERENCES rank (rank_uuid),
       FOREIGN KEY (pilot_status) REFERENCES pilot_status (status),
       FOREIGN KEY (role) REFERENCES role (role_name),
       FOREIGN KEY (user_status) REFERENCES user_status (status),
+      FOREIGN KEY (meta_position_status) REFERENCES meta_position_name (meta_name),
       PRIMARY KEY (account_uuid)
   );`,
 
@@ -159,25 +177,36 @@ const preparedSQL = [
              ('1785b149-862d-46ca-b4cd-73b975de19dd', 'Flight Engineer', TRUE),
              ('f6d5268e-69d4-4cd0-b932-610341143548', 'Gunner', TRUE);`,
 
+
+
   `CREATE TABLE meta_position (
       meta_position_uuid UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
-      meta_name VARCHAR(30) NOT NULL,
+      meta_name VARCHAR(30) NOT NULL DEFAULT 'meta_pilot',
       crew_position_uuid UUID,
       PRIMARY KEY (meta_position_uuid),
-      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
+      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid),
+      FOREIGN KEY (meta_name) REFERENCES meta_position_name (meta_name)
   )`,
 
-//   `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
-//       VALUES ()`,
+  `INSERT INTO meta_position (meta_position_uuid, meta_name, crew_position_uuid)
+      VALUES ('f186dd17-97f5-40ef-a837-9d4af03f7346', 'meta_pilot', 'b15bd146-0d92-4080-9740-2112fed365fd'),
+             ('62e7641a-264b-438a-8b2d-813efd981ed5', 'meta_pilot', '991dd169-dc45-4049-8a8d-58173d66223b'),
+             ('bb3050c7-ef67-4a15-a4e1-c5a1bceda464', 'meta_load', 'f45f9297-c7af-40ef-88cc-6c137e44b534'),
+             ('a52358ea-f6d1-43a9-98d3-8cd3e979d099', 'meta_load', 'e770fd78-2d5a-4065-a01c-8dcb1cd2e558'),
+             ('157ea1cc-b7f9-494d-86d7-026c2ea480f7', 'meta_combat_system_officer', '0ddfcd5e-54e8-4571-8fdf-3630fd484f6c'),
+             ('43fc4416-19a2-4a59-8f31-ffee437259fc', 'meta_engineer', '1785b149-862d-46ca-b4cd-73b975de19dd'),
+             ('7e4f13c0-82f2-4947-9cd9-a49f32870c8a', 'meta_gunner', 'f6d5268e-69d4-4cd0-b932-610341143548')`,
+
+
 
   `CREATE TABLE model_position (
       model_position_uuid UUID DEFAULT uuid_generate_v4(),
       model_uuid UUID,
       crew_position_uuid UUID,
       position_order SMALLINT NOT NULL,
-      PRIMARY KEY (model_position_uuid),
-      FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid),
-      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid)
+      PRIMARY KEY (model_position_uuid, position_order),
+      FOREIGN KEY (model_uuid) REFERENCES aircraft_model (model_uuid) ON DELETE CASCADE,
+      FOREIGN KEY (crew_position_uuid) REFERENCES crew_position (crew_position_uuid) ON DELETE CASCADE
   )`,
 
   `INSERT INTO model_position (model_uuid, crew_position_uuid, position_order)
@@ -203,7 +232,7 @@ const preparedSQL = [
 `INSERT INTO aircraft_status (status)
     VALUES ('Available'),
            ('Unavailable'),
-           ('Under_Maintenance');`,         
+           ('Maintenance');`,         
 
   `CREATE TABLE aircraft (
       aircraft_uuid UUID DEFAULT uuid_generate_v4(),
@@ -231,10 +260,10 @@ const preparedSQL = [
   );`,
 
   `INSERT INTO location (location_uuid, location_name, track_num)
-      VALUES ('96017add-cf3d-4075-b09b-7fd9ad690e04', 'Fort Mooty', 420),
-             ('ea703189-31ea-4235-bdbb-b017731fb29c', 'Mooty 1', 724),
-             ('40ba35ba-92a9-4255-8960-e47b83df1cd0', 'Mooty 2', 725),
-             ('a88796b2-9613-48d4-833f-77564e6e89a5', 'Mooty 3', 726);`,
+      VALUES ('96017add-cf3d-4075-b09b-7fd9ad690e04', 'Fort Moody', 420),
+             ('ea703189-31ea-4235-bdbb-b017731fb29c', 'Moody 1', 724),
+             ('40ba35ba-92a9-4255-8960-e47b83df1cd0', 'Moody 2', 725),
+             ('a88796b2-9613-48d4-833f-77564e6e89a5', 'Moody 3', 726);`,
 
 
 

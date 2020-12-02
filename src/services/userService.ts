@@ -5,8 +5,8 @@ import validator from "validator";
 
 
 const makeUserObject = (account_uuid: string, email: string, first_name: string, last_name: string, accepted: boolean,
-  rank_uuid: string, pilot_status: string, role: string, user_status: string): User => {
-    return { account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status };
+  rank_uuid: string, pilot_status: string, role: string, user_status: string, meta_position_status: string): User => {
+    return { account_uuid, email, first_name, last_name, accepted, rank_uuid, pilot_status, role, user_status, meta_position_status };
   }
 
 
@@ -30,7 +30,7 @@ export const getUser = async (account_uuid: string): Promise<User> => {
 export const getAllUsers = async (): Promise<Array<User>> => {
   let client: any = null;
   let userList: Array<User>;
-  const SQL: string = baseUserData + "WHERE role = 'User'";
+  const SQL: string = baseUserData + "WHERE role <> 'Admin' AND accepted = true";
   let sqlResult: any = null;
   
   try {
@@ -44,7 +44,7 @@ export const getAllUsers = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }
@@ -67,7 +67,7 @@ export const getNonApprovedUsers = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }
@@ -90,7 +90,7 @@ export const getPilots = async (): Promise<Array<User>> => {
 
   userList = sqlResult.rows.map((user: any) => 
     makeUserObject(user.account_uuid, user.email, user.first_name, user.last_name, user.accepted, user.rank_uuid,
-      user.pilot_status, user.role, user.user_status)
+      user.pilot_status, user.role, user.user_status, user.meta_position_status)
   )
   return userList;
 }
@@ -111,7 +111,7 @@ export const updateUser = async (account_uuid: string, updateProps: any): Promis
   }
 
   sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
-  console.log("SQL:", sql);
+  //console.log("SQL:", sql);
   values.push(account_uuid);
 
   try {
@@ -142,7 +142,7 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<{ e
   }
 
   sql += (sqlSubSet + ` WHERE account_uuid = $${values.length+1}`);
-  console.log("SQL:", sql);
+  //console.log("SQL:", sql);
   values.push(account_uuid);
   
   try {
@@ -153,7 +153,7 @@ export const replaceUser = async (account_uuid: string, user: User): Promise<{ e
     if (client) client.release();
     throw new Error("Replace User Error from SQL Query error :"+error);
   }
-  console.log("SQLResult for replace:", sqlResult);
+  //console.log("SQLResult for replace:", sqlResult);
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
@@ -185,7 +185,7 @@ export const approveUsers = async (account_uuids: Array<string>): Promise<{ erro
   sql += ")";
 
   try {
-    client = await pool.conenct();
+    client = await pool.connect();
     sqlResult = await client.query(sql, valuesArray);
     client.release();
   } catch (error) {

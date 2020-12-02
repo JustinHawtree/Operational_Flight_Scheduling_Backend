@@ -39,7 +39,7 @@ export const getAllFlightCrews = async (): Promise<Array<FlightCrew>> => {
 
 export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error: any, newFlightCrewUUID: string }> => {
   let client: any = null;
-  const SQL = `INSERT INTO flight (flight_uuid, account_uuid, crew_position_uuid)
+  const SQL = `INSERT INTO flight_crew (flight_uuid, account_uuid, crew_position_uuid)
                 VALUES ($1, $2, $3) RETURNING flight_crew_uuid`;
   const values = [flightCrew.flight_uuid, flightCrew.account_uuid, flightCrew.crew_position_uuid];
   let sqlResult: any = null;
@@ -47,6 +47,7 @@ export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error:
   try {
     client = await pool.connect();
     sqlResult = await client.query(SQL, values);
+    client.release();
   } catch (error) {
     if (client) client.release();
     throw new Error("Create Flight Crew Error :"+error);
@@ -57,7 +58,7 @@ export const createFlightCrew = async (flightCrew: FlightCrew): Promise<{ error:
 }
 
 
-type CrewMembers = { account_uuid: string, crew_position_uuid: string };
+type CrewMembers = { airman_uuid: string, crew_position_uuid: string };
 
 export const createFlightCrewsByFlight = async (flight_uuid: string, crew_members: Array<CrewMembers>): Promise<{ error: any }> => {
   let client: any = null;
@@ -73,23 +74,28 @@ export const createFlightCrewsByFlight = async (flight_uuid: string, crew_member
     let valuesIndex = 1;
 
     for (const item of crew_members) {
-      crewMembersSQL += `($${valuesIndex++}, $${valuesIndex++}, $${valuesIndex++}),`;
-      valueArray.push(flight_uuid, item.account_uuid, item.crew_position_uuid);
+      if (item.airman_uuid) {
+        crewMembersSQL += `($${valuesIndex++}, $${valuesIndex++}, $${valuesIndex++}),`;
+        valueArray.push(flight_uuid, item.airman_uuid, item.crew_position_uuid);
+      }
     }
     crewMembersSQL = crewMembersSQL.slice(0, -1);
 
     client = await pool.connect();
+    console.log("SQL:",crewMembersSQL, " Values:", valueArray);
     sqlResult = await client.query(crewMembersSQL, valueArray);
     client.release();
-
+    console.log("Flight crew server made it here 1");
   } catch (error) {
     if (client) client.release();
+    console.log("Got error in flight crew service");
     throw new Error("Create Flight Crews By Flight Error :"+error);
   }
 
   if (sqlResult.rowCount <= 0) {
     return {error: "No row updated"};
   }
+  console.log("Flight crew service made it here 2");
   return { error: false };
 }
 

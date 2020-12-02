@@ -50,7 +50,7 @@ export const createLocation = async (location: Location): Promise<{ error: any, 
     if (client) client.release();
     throw new Error("Create Location Error :"+error);
   }
-  console.log("SQLResult for Creating Location:", sqlResult);
+  //console.log("SQLResult for Creating Location:", sqlResult);
 
   return {error: false, newLocationUUID: sqlResult.rows[0].location_uuid}
 }
