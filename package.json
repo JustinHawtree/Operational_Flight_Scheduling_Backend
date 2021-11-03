@@ -23,7 +23,7 @@
     "moment": "^2.29.1",
     "pg": "^8.2.1",
     "uWebSockets.js": "uNetworking/uWebSockets.js#v18.8.0",
-    "validator": "^13.1.1"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",
