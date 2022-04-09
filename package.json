@@ -20,7 +20,7 @@
     "express": "^4.17.1",
     "json2csv": "^5.0.5",
     "jsonwebtoken": "^8.5.1",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "pg": "^8.2.1",
     "uWebSockets.js": "uNetworking/uWebSockets.js#v18.8.0",
     "validator": "^13.1.1"
